@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SEO FARM</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ╔══════════════════════════════════════════════════╗
+   ║  ТЕМА — меняй только этот блок :root             ║
+   ╚══════════════════════════════════════════════════╝ */
+:root {
+  /* Фоны */
+  --bg:           #F1E9F8;
+  --bg-card:      #FFFFFF;
+  --bg-input:     #F4EAFD;
+  --bg-hover:     #F9F3FF;
+
+  /* Бордюры */
+  --border:       #D2AEEE;
+  --border-focus: #7B2CBF;
+
+  /* Акцент (фиолетовый) */
+  --accent:       #7B2CBF;
+  --accent-2:     #9D4EDD;
+  --accent-3:     #C77DFF;
+  --accent-dark:  #3A0A68;
+  --accent-bg:    rgba(123,44,191,0.10);
+  --accent-bg2:   rgba(123,44,191,0.06);
+
+  /* Градиенты */
+  --grad:         linear-gradient(145deg, #7B2CBF 0%, #9D4EDD 100%);
+  --grad-card:    linear-gradient(155deg, #FFFFFF 0%, #F7EEFF 100%);
+  --grad-glass-d: rgba(255,255,255,0.18);   /* стекло на тёмном */
+  --grad-glass-l: rgba(123,44,191,0.10);    /* стекло на светлом */
+
+  /* Текст */
+  --txt:          #150028;
+  --txt-2:        #58366E;
+  --txt-dim:      #9877B2;
+
+  /* Статусы — не трогать */
+  --ok:           #166534;
+  --ok-bg:        rgba(22,101,52,0.09);
+  --warn:         #92400E;
+  --warn-bg:      rgba(146,64,14,0.09);
+  --err:          #991B1B;
+  --err-bg:       rgba(153,27,27,0.09);
+
+  /* Тени */
+  --sh-sm: 0 1px 4px rgba(123,44,191,0.07), 0 1px 2px rgba(0,0,0,0.04);
+  --sh-md: 0 6px 24px rgba(123,44,191,0.13), 0 2px 6px rgba(0,0,0,0.05);
+  --sh-lg: 0 16px 48px rgba(123,44,191,0.18);
+  --sh-glass: 0 4px 18px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.55);
+  --sh-glass-l: 0 3px 12px rgba(123,44,191,0.14), inset 0 1px 0 rgba(255,255,255,0.85);
+
+  /* Радиусы */
+  --r-xs: 5px;
+  --r-sm: 9px;
+  --r-md: 13px;
+  --r-lg: 20px;
+
+  /* Шрифты */
+  --f-h: 'Syne', sans-serif;
+  --f-b: 'Inter', sans-serif;
+
+  /* ── РАЗМЕРЫ — меняй здесь ──────────────── */
+  --sidebar-w:  272px;
+  --base-fs:    16px;   /* базовый шрифт страницы  */
+  --btn-h:      50px;   /* высота обычной кнопки   */
+  --btn-sm-h:   40px;   /* высота маленькой кнопки */
+  --btn-lg-h:   56px;   /* высота большой кнопки   */
+  --btn-fs:     1rem;   /* шрифт обычной кнопки    */
+  --btn-sm-fs:  0.88rem;
+  --btn-lg-fs:  1.08rem;
+  --input-h:    50px;   /* высота инпутов          */
+  --input-fs:   1rem;
+  --label-fs:   0.86rem;
+  --hint-fs:    0.78rem;
+  --table-fs:   0.92rem;
+  /* ─────────────────────────────────────── */
+}
+
+/* ─── СБРОС ─────────────────────────────────────── */
+*, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+html { font-size: var(--base-fs); }
+body {
+  background: var(--bg);
+  color: var(--txt);
+  font-family: var(--f-b);
+  display: flex;
+  min-height: 100vh;
+  line-height: 1.55;
+}
+body::before {
+  content:''; position:fixed; inset:0;
+  background-image: radial-gradient(circle, rgba(123,44,191,0.05) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events:none; z-index:0;
+}
+a { color:var(--accent); text-decoration:none; }
+a:hover { text-decoration:underline; }
+
+/* ─── СТЕКЛЯННЫЕ ИКОНКИ ─────────────────────────
+   Два класса: тёмный фон (сайдбар) и светлый (карточки).
+   Размер иконок регулируется через --icon-sz и --icon-svg-sz
+   ─────────────────────────────────────────────── */
+:root {
+  --icon-sz:    42px;
+  --icon-svg-sz:20px;
+}
+
+/* На тёмном фоне (сайдбар) */
+.gico {
+  width: var(--icon-sz); height: var(--icon-sz);
+  flex-shrink: 0; border-radius: var(--r-sm);
+  background: var(--grad-glass-d);
+  backdrop-filter: blur(14px) saturate(1.6);
+  -webkit-backdrop-filter: blur(14px) saturate(1.6);
+  border: 1px solid rgba(255,255,255,0.44);
+  display: flex; align-items:center; justify-content:center;
+  box-shadow: var(--sh-glass);
+  transition: all 0.15s;
+}
+.gico svg { width:var(--icon-svg-sz); height:var(--icon-svg-sz); }
+
+/* На светлом фоне (карточки / разделы) */
+.gico-l {
+  width: var(--icon-sz); height: var(--icon-sz);
+  flex-shrink: 0; border-radius: var(--r-sm);
+  background: var(--grad-glass-l);
+  backdrop-filter: blur(14px) saturate(1.6);
+  -webkit-backdrop-filter: blur(14px) saturate(1.6);
+  border: 1px solid rgba(123,44,191,0.30);
+  display: flex; align-items:center; justify-content:center;
+  box-shadow: var(--sh-glass-l);
+  transition: all 0.15s;
+}
+.gico-l svg { width:var(--icon-svg-sz); height:var(--icon-svg-sz); }
+
+/* Hover-эффект на иконках */
+.gico:hover   { background:rgba(255,255,255,0.26); border-color:rgba(255,255,255,0.6); }
+.gico-l:hover { background:rgba(123,44,191,0.16); border-color:rgba(123,44,191,0.42); }
+
+/* SVG цвета */
+.ico-wh { stroke:#fff; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.ico-ac { stroke:var(--accent); fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+
+/* ─── САЙДБАР ───────────────────────────────────── */
+.sidebar {
+  width: var(--sidebar-w); min-width: var(--sidebar-w);
+  background: var(--grad);
+  position: fixed; top:0; left:0; bottom:0;
+  display: flex; flex-direction:column;
+  z-index: 200;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.25) transparent;
+}
+.sidebar::-webkit-scrollbar { width: 3px; }
+.sidebar::-webkit-scrollbar-track { background: transparent; }
+.sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.25); border-radius: 3px; }
+
+/* Планировщик прилипает к низу только если места хватает */
+.sched-w {
+  margin-top: auto;
+  position: sticky;
+  bottom: 0;
+  background: linear-gradient(145deg, #7B2CBF 0%, #9D4EDD 100%);
+  backdrop-filter: blur(8px);
+}
+.sidebar::before {
+  content:''; position:absolute; top:-80px; right:-60px;
+  width:220px; height:220px; border-radius:50%;
+  background:rgba(255,255,255,0.07); pointer-events:none;
+}
+.sidebar::after {
+  content:''; position:absolute; bottom:-60px; left:-50px;
+  width:180px; height:180px; border-radius:50%;
+  background:rgba(255,255,255,0.05); pointer-events:none;
+}
+
+.logo {
+  padding: 20px 18px 16px;
+  border-bottom: 1px solid rgba(255,255,255,0.14);
+  position:relative; z-index:1;
+}
+.logo-img-wrap { display:flex; align-items:center; gap:14px; margin-bottom:4px; }
+.logo-img {
+  width: 52px; height: 52px;
+  border-radius: 12px;
+  object-fit: cover;
+  flex-shrink:0;
+  box-shadow: 0 4px 18px rgba(0,0,0,0.30), 0 1px 0 rgba(255,255,255,0.18) inset;
+}
+.logo-texts { display:flex; flex-direction:column; gap:3px; }
+.logo-name {
+  font-family: var(--f-h); font-weight:800; font-size:1.18rem;
+  color:#fff; letter-spacing:-0.3px; line-height:1;
+}
+.logo-sub {
+  font-size:0.62rem; color:rgba(255,255,255,0.44);
+  letter-spacing:0.1em; text-transform:uppercase;
+}
+
+.nb { padding:10px 0 2px; position:relative; z-index:1; }
+.nb-lbl {
+  padding:0 20px 5px;
+  font-size:0.63rem; font-weight:700;
+  color:rgba(255,255,255,0.36);
+  text-transform:uppercase; letter-spacing:0.1em;
+  font-family:var(--f-h);
+}
+.ni {
+  display:flex; align-items:center; gap:13px;
+  padding: 9px 20px;
+  cursor:pointer;
+  color:rgba(255,255,255,0.70);
+  font-size: 0.97rem; font-weight:500;
+  border-left: 2px solid transparent;
+  transition: all 0.14s ease; position:relative; z-index:1;
+}
+.ni .gico { width:34px; height:34px; }
+.ni .gico svg { width:16px; height:16px; }
+.ni:hover { color:#fff; background:rgba(255,255,255,0.09); }
+.ni.active {
+  color:#fff; font-weight:700;
+  background:rgba(255,255,255,0.14);
+  border-left-color:rgba(255,255,255,0.80);
+}
+.ni.active .gico {
+  background:rgba(255,255,255,0.26);
+  border-color:rgba(255,255,255,0.60);
+}
+.nbadge {
+  margin-left:auto; background:rgba(255,255,255,0.92);
+  color:var(--accent); border-radius:20px;
+  padding:2px 9px; font-size:0.68rem; font-weight:800;
+}
+
+.sched-w {
+  margin-top:auto;
+  border-top:1px solid rgba(255,255,255,0.13);
+  padding:14px 18px; position:relative; z-index:1;
+}
+.sched-top {
+  display:flex; align-items:center; justify-content:space-between;
+  font-size:0.84rem; color:rgba(255,255,255,0.75);
+  margin-bottom:10px;
+}
+.pdot {
+  width:8px; height:8px; border-radius:50%;
+  background:#4ADE80;
+  box-shadow:0 0 9px rgba(74,222,128,0.75);
+  animation:blink 2s ease-in-out infinite;
+}
+@keyframes blink{ 0%,100%{opacity:1} 50%{opacity:0.3} }
+.sched-btns { display:flex; gap:5px; }
+.sched-btn {
+  flex:1; height:36px;
+  background:rgba(255,255,255,0.12);
+  border:1px solid rgba(255,255,255,0.22);
+  border-radius:var(--r-xs);
+  color:rgba(255,255,255,0.84);
+  font-family:var(--f-b); font-size:0.9rem; font-weight:600;
+  cursor:pointer; transition:all 0.12s;
+}
+.sched-btn:hover { background:rgba(255,255,255,0.24); color:#fff; }
+
+/* ─── MAIN ──────────────────────────────────────── */
+.main {
+  margin-left:var(--sidebar-w);
+  flex:1; display:flex; flex-direction:column;
+  position:relative; z-index:1;
+}
+.topbar {
+  height:62px; padding:0 30px;
+  display:flex; align-items:center; justify-content:space-between;
+  background:rgba(241,233,248,0.92);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--border);
+  position:sticky; top:0; z-index:100;
+}
+.page-ttl {
+  font-family:var(--f-h); font-weight:700; font-size:1.08rem;
+  color:var(--accent-dark);
+}
+.topbar-r {
+  display:flex; align-items:center; gap:14px;
+  font-size:0.88rem; color:var(--txt-dim);
+}
+.top-chip {
+  padding:4px 14px;
+  background:var(--ok-bg); color:var(--ok);
+  border-radius:20px; font-weight:700; font-size:0.76rem;
+}
+.content { padding:26px 30px; flex:1; }
+.section { display:none; }
+.section.active { display:block; animation:fadeUp 0.18s ease; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+
+/* ─── СТАТ-КАРТОЧКИ ─────────────────────────────── */
+.stats-row {
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(155px,1fr));
+  gap:13px; margin-bottom:24px;
+}
+.scard {
+  background:var(--grad-card);
+  border:1px solid var(--border); border-radius:var(--r-md);
+  padding:20px 18px; box-shadow:var(--sh-sm);
+  position:relative; overflow:hidden;
+  transition:transform 0.14s,box-shadow 0.14s;
+}
+.scard:hover { transform:translateY(-2px); box-shadow:var(--sh-md); }
+.scard::after {
+  content:''; position:absolute; top:0; left:0; right:0; height:3px;
+  border-radius:var(--r-md) var(--r-md) 0 0;
+}
+.s-purple::after { background:var(--grad); }
+.s-green::after  { background:#15803D; }
+.s-red::after    { background:#991B1B; }
+.s-amber::after  { background:#92400E; }
+.s-pink::after   { background:linear-gradient(90deg,#C77DFF,#E9C6FF); }
+.s-teal::after   { background:linear-gradient(90deg,#0284C7,#38BDF8); }
+.sval { font-family:var(--f-h); font-size:2.2rem; font-weight:800; color:var(--accent-dark); line-height:1; }
+.slbl { font-size:0.72rem; color:var(--txt-dim); margin-top:7px; text-transform:uppercase; letter-spacing:0.06em; font-weight:500; }
+
+/* ─── КАРТОЧКИ ──────────────────────────────────── */
+.card {
+  background:var(--bg-card);
+  border:1px solid var(--border); border-radius:var(--r-lg);
+  padding:24px; margin-bottom:18px; box-shadow:var(--sh-sm);
+}
+.ctitle {
+  font-family:var(--f-h); font-size:0.80rem; font-weight:700;
+  text-transform:uppercase; letter-spacing:0.09em; color:var(--txt-dim);
+  margin-bottom:20px; display:flex; align-items:center; gap:12px;
+}
+.card-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+.g2 { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+.g3 { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; }
+@media(max-width:1000px){ .g2,.g3{grid-template-columns:1fr} }
+
+/* ─── ФОРМЫ ─────────────────────────────────────── */
+.frow { display:flex; gap:14px; margin-bottom:14px; flex-wrap:wrap; }
+.fg { display:flex; flex-direction:column; gap:7px; flex:1; min-width:195px; }
+label { font-size:var(--label-fs); font-weight:600; color:var(--txt-2); }
+input, textarea, select {
+  background:var(--bg-input);
+  border:1.5px solid var(--border); border-radius:var(--r-sm);
+  padding:0 16px; height:var(--input-h);
+  color:var(--txt); font-family:var(--f-b); font-size:var(--input-fs);
+  outline:none; width:100%;
+  transition:border-color 0.14s, box-shadow 0.14s;
+}
+input:focus, textarea:focus, select:focus {
+  border-color:var(--border-focus);
+  box-shadow:0 0 0 3px rgba(123,44,191,0.12);
+}
+input::placeholder, textarea::placeholder { color:var(--txt-dim); }
+textarea { height:auto; min-height:105px; padding:14px 16px; resize:vertical; }
+select { cursor:pointer; }
+.hint { font-size:var(--hint-fs); color:var(--txt-dim); line-height:1.55; }
+.hint-w { color:var(--warn); }
+
+/* ─── КНОПКИ ────────────────────────────────────
+   Меняй размеры через переменные :root выше
+   ─────────────────────────────────────────────── */
+.btn {
+  height:var(--btn-h); padding:0 24px;
+  border-radius:var(--r-sm); border:none;
+  font-family:var(--f-b); font-size:var(--btn-fs); font-weight:700;
+  cursor:pointer; transition:all 0.14s;
+  display:inline-flex; align-items:center; gap:10px;
+  white-space:nowrap; letter-spacing:0.01em;
+}
+.btn:active { transform:scale(0.97); }
+.btn:disabled { opacity:0.4; cursor:not-allowed; }
+
+.btn-p { background:var(--grad); color:#fff; box-shadow:0 2px 12px rgba(123,44,191,0.32); }
+.btn-p:hover { filter:brightness(1.07); box-shadow:0 6px 22px rgba(123,44,191,0.46); }
+.btn-ok { background:var(--ok); color:#fff; box-shadow:0 2px 8px rgba(22,101,52,0.24); }
+.btn-ok:hover { filter:brightness(1.08); }
+.btn-err { background:var(--err-bg); color:var(--err); border:1.5px solid rgba(153,27,27,0.22); }
+.btn-err:hover { background:var(--err); color:#fff; }
+.btn-ghost { background:transparent; border:1.5px solid var(--border); color:var(--txt-2); }
+.btn-ghost:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-bg); }
+.btn-soft { background:var(--accent-bg); color:var(--accent); border:1px solid rgba(123,44,191,0.22); }
+.btn-soft:hover { background:rgba(123,44,191,0.17); }
+
+.btn-sm { height:var(--btn-sm-h); padding:0 18px; font-size:var(--btn-sm-fs); }
+.btn-lg { height:var(--btn-lg-h); padding:0 32px; font-size:var(--btn-lg-fs); }
+
+/* ─── ТАБЛИЦА ───────────────────────────────────── */
+.tw { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; font-size:var(--table-fs); }
+thead tr { background:var(--bg); border-bottom:2px solid var(--border); }
+th { text-align:left; padding:11px 14px; color:var(--txt-dim); font-size:0.72rem; text-transform:uppercase; letter-spacing:0.06em; font-weight:700; }
+td { padding:11px 14px; border-bottom:1px solid rgba(210,174,238,0.28); vertical-align:middle; }
+tr:hover td { background:var(--bg-hover); }
+tr:last-child td { border-bottom:none; }
+
+/* ─── ПИЛЮЛИ ────────────────────────────────────── */
+.pill { display:inline-flex; align-items:center; padding:3px 11px; border-radius:20px; font-size:0.74rem; font-weight:700; }
+.p-green  { background:var(--ok-bg);  color:var(--ok); }
+.p-amber  { background:var(--warn-bg);color:var(--warn); }
+.p-red    { background:var(--err-bg); color:var(--err); }
+.p-purple { background:var(--accent-bg); color:var(--accent); }
+.p-gray   { background:rgba(152,119,178,0.10); color:var(--txt-dim); }
+
+/* ─── ЛОГИ ──────────────────────────────────────── */
+.logbox {
+  background:#110024; border:1px solid rgba(123,44,191,0.24); border-radius:var(--r-md);
+  padding:18px; font-family:'Courier New',monospace; font-size:0.82rem;
+  max-height:520px; overflow-y:auto; line-height:1.7;
+}
+.ll { display:flex; gap:10px; padding:1px 0; }
+.lt { color:#7B5BA0; min-width:116px; flex-shrink:0; }
+.lv { min-width:68px; font-weight:700; flex-shrink:0; }
+.la { color:#C084FC; min-width:128px; flex-shrink:0; }
+.lm { flex:1; color:#DDD6FE; word-break:break-all; }
+.lvSUCCESS{color:#4ADE80} .lvINFO{color:#A78BFA} .lvWARNING{color:#FCD34D} .lvERROR{color:#F87171}
+
+/* ─── КАРТОЧКИ ЛИДОВ ────────────────────────────── */
+.lead-card {
+  background:var(--bg-card); border:1px solid var(--border);
+  border-radius:var(--r-md); padding:18px 20px; margin-bottom:12px;
+  box-shadow:var(--sh-sm); transition:box-shadow 0.14s;
+}
+.lead-card:hover { box-shadow:var(--sh-md); }
+.lead-card.new { border-left:3px solid var(--ok); }
+.lead-card.processed { opacity:0.58; }
+.lead-card.spam { opacity:0.38; }
+.l-auth { font-weight:700; font-size:0.97rem; margin-bottom:6px; color:var(--accent-dark); }
+.l-text { font-size:0.90rem; color:var(--txt-2); margin-bottom:10px; line-height:1.6; }
+.l-meta { display:flex; gap:16px; flex-wrap:wrap; font-size:0.76rem; color:var(--txt-dim); }
+.l-act  { display:flex; gap:9px; margin-top:13px; }
+
+/* ─── ЗАГРУЗКА ──────────────────────────────────── */
+.upzone {
+  border:2px dashed var(--border); border-radius:var(--r-md);
+  padding:28px; text-align:center; cursor:pointer;
+  color:var(--txt-dim); font-size:0.90rem;
+  transition:all 0.14s; background:var(--bg-input); line-height:1.7;
+}
+.upzone:hover { border-color:var(--accent); color:var(--accent); background:var(--accent-bg); }
+.upzone input { display:none; }
+.upzone svg { display:block; margin:0 auto 8px; }
+
+/* ─── ПЛАТФОРМЫ ─────────────────────────────────── */
+.plat-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(168px,1fr)); gap:10px; margin-bottom:16px; }
+.plat-item {
+  border:1.5px solid var(--border); border-radius:var(--r-sm);
+  padding:13px 15px; cursor:pointer;
+  display:flex; align-items:center; gap:12px;
+  font-size:0.90rem; font-weight:600; color:var(--txt-2);
+  transition:all 0.12s;
+}
+.plat-item:hover { border-color:var(--accent); color:var(--accent); }
+.plat-item.sel { border-color:var(--accent); background:var(--accent-bg); color:var(--accent); }
+.plat-item input { width:16px; height:16px; accent-color:var(--accent); cursor:pointer; flex-shrink:0; }
+
+/* ─── БЫСТРЫЕ ДЕЙСТВИЯ ──────────────────────────── */
+.qa-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(206px,1fr)); gap:13px; }
+.qa-btn {
+  background:var(--grad-card); border:1.5px solid var(--border);
+  border-radius:var(--r-md); padding:18px 20px; cursor:pointer;
+  display:flex; align-items:center; gap:16px; text-align:left;
+  transition:all 0.14s; font-family:var(--f-b);
+}
+.qa-btn:hover { border-color:var(--accent); box-shadow:var(--sh-md); transform:translateY(-2px); }
+.qa-lbl { font-weight:700; font-size:0.95rem; color:var(--accent-dark); }
+.qa-sub { font-size:0.76rem; color:var(--txt-dim); margin-top:3px; }
+
+/* ─── УВЕДОМЛЕНИЕ ───────────────────────────────── */
+#notif {
+  position:fixed; bottom:24px; right:24px;
+  background:var(--bg-card); border:1px solid var(--border);
+  border-radius:var(--r-md); padding:15px 22px;
+  font-size:0.94rem; font-weight:600;
+  display:none; z-index:9999; max-width:380px;
+  box-shadow:var(--sh-lg); animation:sIn 0.18s ease; color:var(--txt);
+}
+@keyframes sIn { from{transform:translateY(8px);opacity:0} to{transform:translateY(0);opacity:1} }
+
+/* ─── УТИЛИТЫ ───────────────────────────────────── */
+.mt8{margin-top:8px} .mt12{margin-top:12px} .mt16{margin-top:16px} .mt20{margin-top:20px}
+.flex{display:flex} .gap6{gap:6px} .gap8{gap:8px} .gap10{gap:10px} .gap12{gap:12px}
+.ac{align-items:center} .jb{justify-content:space-between}
+.divider{height:1px;background:var(--border);margin:18px 0}
+
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--accent-3)}
+
+/* ═══════════════════════════════════════════════
+   МОБИЛЬНАЯ АДАПТАЦИЯ
+   ═══════════════════════════════════════════════ */
+
+/* ─── Бургер-кнопка ─────────────────────────── */
+.burger {
+  display:none;
+  width:44px; height:44px;
+  background:var(--accent-bg);
+  border:1.5px solid var(--border);
+  border-radius:var(--r-sm);
+  flex-direction:column; align-items:center; justify-content:center;
+  gap:5px; cursor:pointer; flex-shrink:0;
+  transition:all 0.14s;
+}
+.burger:hover { background:var(--accent); border-color:var(--accent); }
+.burger:hover .burger-line { background:#fff; }
+.burger-line {
+  width:20px; height:2px;
+  background:var(--accent); border-radius:2px;
+  transition:all 0.2s;
+}
+/* Анимация X при открытом меню */
+.burger.open .burger-line:nth-child(1) { transform:translateY(7px) rotate(45deg); }
+.burger.open .burger-line:nth-child(2) { opacity:0; transform:scaleX(0); }
+.burger.open .burger-line:nth-child(3) { transform:translateY(-7px) rotate(-45deg); }
+.burger.open { background:var(--accent); border-color:var(--accent); }
+.burger.open .burger-line { background:#fff; }
+
+/* ─── Оверлей ───────────────────────────────── */
+.overlay {
+  display:none;
+  position:fixed; inset:0;
+  background:rgba(20,0,40,0.55);
+  backdrop-filter:blur(3px);
+  z-index:190;
+  opacity:0; transition:opacity 0.22s;
+}
+.overlay.visible { opacity:1; }
+
+/* ─── Нижняя навигация ──────────────────────── */
+.bottom-nav {
+  display:none;
+  position:fixed; bottom:0; left:0; right:0;
+  height:64px;
+  background:rgba(255,255,255,0.96);
+  backdrop-filter:blur(16px);
+  border-top:1px solid var(--border);
+  z-index:180;
+  padding:0 8px;
+  align-items:center; justify-content:space-around;
+  box-shadow:0 -4px 20px rgba(123,44,191,0.10);
+}
+.bn-item {
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  padding:6px 10px; border-radius:var(--r-sm);
+  cursor:pointer; flex:1; max-width:72px;
+  transition:all 0.13s;
+  color:var(--txt-dim);
+}
+.bn-item svg { width:22px; height:22px; stroke:currentColor; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round; }
+.bn-item span { font-size:0.58rem; font-weight:600; text-transform:uppercase; letter-spacing:0.04em; line-height:1; }
+.bn-item:hover,.bn-item.active { color:var(--accent); background:var(--accent-bg); }
+
+/* ─── МЕДИА: планшет ≤ 900px ────────────────── */
+@media(max-width:900px){
+  .sidebar {
+    transform:translateX(-100%);
+    transition:transform 0.24s cubic-bezier(0.4,0,0.2,1);
+    box-shadow:none;
+  }
+  .sidebar.open {
+    transform:translateX(0);
+    box-shadow:4px 0 40px rgba(60,13,107,0.30);
+  }
+  .overlay { display:block; }
+  .main { margin-left:0; }
+  .burger { display:flex; }
+  .topbar { padding:0 16px; gap:12px; }
+  .topbar-r { gap:8px; }
+  #clock { display:none; }
+  .content { padding:18px 16px 90px; }
+  .g2,.g3 { grid-template-columns:1fr; gap:14px; }
+  .card { padding:18px 16px; }
+  .card-row { flex-wrap:wrap; gap:10px; }
+  .stats-row { grid-template-columns:repeat(auto-fill,minmax(130px,1fr)); gap:10px; }
+  .frow { gap:10px; }
+  .fg { min-width:100%; }
+  .qa-grid { grid-template-columns:1fr 1fr; gap:10px; }
+  .plat-grid { grid-template-columns:1fr 1fr; }
+  .btn-lg { height:50px; padding:0 22px; font-size:1rem; }
+}
+
+/* ─── МЕДИА: смартфон ≤ 520px ──────────────── */
+@media(max-width:520px){
+  :root {
+    --base-fs:   15px;
+    --btn-h:     48px;
+    --btn-sm-h:  40px;
+    --input-h:   50px;
+    --btn-fs:    0.97rem;
+  }
+  .topbar { height:56px; }
+  .page-ttl { font-size:0.95rem; }
+  .top-chip { display:none !important; }
+  #clock { display:none; }
+
+  .content { padding:12px 10px 84px; }
+
+  /* Карточки */
+  .card { padding:14px 12px; border-radius:var(--r-md); margin-bottom:12px; }
+  .ctitle { font-size:0.76rem; margin-bottom:14px; gap:8px; }
+  .card-row { flex-wrap:wrap; gap:8px; align-items:flex-start; }
+  .card-row .btn { font-size:0.82rem; }
+
+  /* Статистика */
+  .stats-row { grid-template-columns:1fr 1fr; gap:8px; margin-bottom:14px; }
+  .sval { font-size:1.75rem; }
+  .slbl { font-size:0.68rem; }
+
+  /* Сетки */
+  .g2,.g3 { grid-template-columns:1fr; gap:12px; }
+
+  /* Быстрые действия */
+  .qa-grid { grid-template-columns:1fr 1fr; gap:8px; }
+  .qa-btn { padding:12px 10px; gap:8px; }
+  .qa-lbl { font-size:0.82rem; }
+  .qa-sub { font-size:0.68rem; }
+
+  /* Формы */
+  .frow { flex-direction:column; gap:8px; }
+  .fg { min-width:100%; }
+  input, select, textarea { font-size:16px !important; } /* предотвращает zoom на iOS */
+  textarea { min-height:90px; }
+
+  /* Кнопки — полная ширина в блоках */
+  .flex.gap10, .flex.gap8, .flex.gap12 { flex-wrap:wrap; }
+  .flex.gap10 .btn, .flex.gap8 .btn, .flex.gap12 .btn { flex:1; min-width:120px; justify-content:center; }
+  .btn-lg { height:50px; font-size:1rem; }
+
+  /* Таблицы — горизонтальный скролл */
+  .tw { overflow-x:auto; -webkit-overflow-scrolling:touch; border-radius:var(--r-sm); }
+  .tw table { min-width:480px; font-size:0.82rem; }
+  th, td { padding:10px 10px !important; }
+
+  /* Платформы публикации */
+  .plat-grid { grid-template-columns:1fr 1fr; gap:8px; }
+  .plat-item { padding:10px; font-size:0.82rem; }
+
+  /* Планировщик */
+  .sched-w { padding:12px; }
+  .sched-btns { gap:6px; }
+  .sched-btn { height:34px; font-size:0.82rem; }
+
+  /* Логи */
+  .logbox { font-size:0.72rem; padding:10px; max-height:300px; }
+  .ll { gap:4px; flex-wrap:wrap; }
+  .lt { display:none; }
+  .la { font-size:0.68rem; }
+
+  /* Нижняя навигация */
+  .bottom-nav { display:flex; height:60px; }
+  .bn-item span { font-size:0.55rem; }
+  .bn-item svg { width:20px; height:20px; }
+
+  /* Уведомление */
+  #notif { left:10px; right:10px; bottom:70px; max-width:none; font-size:0.88rem; padding:12px 16px; }
+
+  /* Гибкий заголовок в topbar */
+  .topbar { gap:10px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ САЙДБАР ══════════════ -->
+<aside class="sidebar">
+
+  <div class="logo">
+    <div class="logo-img-wrap">
+      <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAGgAAABoCAYAAAAdHLWhAAAueElEQVR42u19a5Bd1XXmt/be55z76pdaLbWeSIAECDC2MfhtwAS/xvEkY4+dTGZSEyflSaamplJT5Ur+TAZPEns8lWSSmkrVkDgeOx7HsRwHj4PBYOzYEGPMQ9iAECAh1Hp1t/r9uK9zzt5rfuzHObfVQAt1bJjoVLXU3ffe0/futdfaa31rrW8BF64L14XrwvX/7UXn8mRmFgCE/9F9XbjWts5+rQ0RmXW9OzMTM8sL67xu6ymZeU3KodZyMyLSAPT4+Piu/v7+d0kprzfGbFdKKS/AdXjTIKKe75nPX0H9ffy9f6JqQ8QAkOd5LoQ4qbV+aGFh4W4iGgOA/fv3yw9/+MP6vCQNAMePH9/WbDY/k2XZMl+4zuvK83yp1WrdduzYsS3lNT7nM8hrzvT09M8MDg7+pZRyi3sot5YUZNiA/ymeQvTShzcHLQKEEOVfKadVp5aWln5pw4YN3ytZqbVd+/fvlwAwNTX1zizLUmZmrXXGzIaZ2WjDxlzQhrVexnB5vQwzp06bWrOzs28rOWAvrUH+iWNjY5u3bdv2Y6XUCAANQAIAGwYJ+7IzR5dw6oklzJ1sI0/t2QF2ZwgI4WQy7ve0wu9j7vmReh8q/l9lx/KLmABeeS//s7tP8TOFXW4fI0DYn4kIJAASBCEIJAkkCFICIiYkFQkZC5AAGAJGF58dDIgIaAxHGNldx+CWqn0fBqBCDBqAzPN8Ynp6+prR0dHpW2+9FZ/4xCfMSwlIEpHudDp/kSTJR51JU2XhnDq4gPs+M4bjBxaRtTQYFJxu7rmrFVQQELhkEhnMZCVAxUqyew0zuef65eQXsDYEL2b7PXrvWXqmEIXQSVjHgWCFwMJ/DwgpQIIhhAApQEoBqQRERJAKkAmh2lCoDsRQEUEToI0AGQZrhjEMZgM2DJkIjF5Sw9Xv24yNF9V7NrgxJhdCqHa7fVutVvv11UwdrdQeIjJHjx69aOfOnc9IKSPvw/sbP7T/BO79k+dhckJSk/aPhfUzVlhEIGN6tjCX1QF2AdmcvfBnC8i/gs+WVVAHu7jB6yMq/VH7POEF4YROTqVIuOd7LSKnMQIQgiAUQUj7RUpYASlAKIFKn0JSlZARQROBDYG1gWED1gzSgDGMtGUgFHDth7bgshtGykJiAGyM6Zw6dWrvzp07TzEzee9vNTdbADAbNmx4v5Qy8drjb/jgX43hrk8fRWM4gagTjAYMM1BWSsNgYit5w8FtRunQDObL+J3eKyTDxeK+kKtddpuZzYp797rpBMAQA7okCHZyNAATA4Lsa8gALCCYYGDAOYFZgJlthM7kNhCjvZRBZwZRRUIqq73MsELS7DYgEFUkjDZ44PMnAaAsJAKghRC1wcHB9wL4jDtK8rJAzrqSJLkepU1PgrA03cHT35nDyO4GhCSkzRxpK4dJrSp77SBhb1qYumIb2wVk+2VWniYlpXaH1UrhEBWHib/PWQaP6KwYisvGwpticiYXTlj+qwyTsBVg2FHGmmh29zA5kLY1uu0cWdfYtcgMTG7PG2MYRhvo3MAYgygR+MEXTmJmbNlpc2Hv4zi+fi2BqnG7c5s3bf4NH7h9ApsubWD3dRG6LY20pdFayNGc7qI5k6K9lCPvarvwZE0AuV0ZzA+XPj5x+KDUY3Cd+ePVNcabux4NKQW4/ufVgt6gdVTSUG/h/HnH3nEoTCoHodrPYrR9nIjABsi7BpwDUpX/bu9mtBsdyLoGj94+jnf95h57cwOCADHz9tV27KpIglLKWihtIKTA7Mkmnv77WbAhyAhIahKVhkR9Q4yhrRWIyNrt7nKG5myGpekUy1NdtBZypG0NZkB4my7t//6DMztTF852cotDQWBh16LwsFZDIFZ4O4X3x4WpFaLXh7DmXhSmD+zMn7MDoqyHBtbJpcI7JYA1QbOBYYIgASEL7fOaateTEVUkTj6+jPnxFga31GCMgYCA1rqyZgGtdHVPHVyGTg1qgxF0xugsabTmc0yPtUFEUAkhqSvUhiLUhmIM76pDRnbXZh2D5nSK+fEOlmdStOczpC0NkxurLMJ6V0KVFh3U6wOg5MKHn1cXhjejQVHpbEeESlpJzvQG4QvhXOFCONaRECu01X3vhR8Uk2F06W9yrzkgQUiXc4w/vYzBLbXSxiN+WVgcAEw8s4S50x0wABURZCIRSQIgoTOGyQyaMxmWzqRgbkJIQFWsl9PYEKM+HGPHNQOIqgJCCqTtDM2ZDMtTGZZnUjTnUnQWM+QdA2MAQW49FEF4DwtknYFwPtkPz16cTGDBwYHrFbF9mYA1U6IMBwh3dkm34MJ7dlbTiWC9OFGI1nuA7LE+UGnT8ApzW4qxSt7o4mR3TaDBmgSUtQyyZo7mVNf69hEhqinrZvYpqMEYBEBnBlnbIGtr5B2NxZbB/OmuNSOCoGKBpKFQ7VOo9Sts2J5g21V9iCoCOtNoLxk0Z1IsT6dYnumiNZ8jXc6RdXUweUIWrrBXGX90eedPlHSFw2G6IihlOGG4+7oXCWFVgaQoCYfCc4U/V8OmKbz6wikqHJVgTsnf3wpbZ7x+AuoNmBg6ZeSdFM2ZLoQkqIpEdSBCbTBCfUMEFSfW/29q+9XWyFNG3mXkXSsAH2AKQYgrhEp/ZE3kgMLWfQ0kjUGQJJjMoL2UozmboTmbYnk2Q2cxR9bSyLsaOmfrslJhLu2iUwhei0UrvMkQqFLp83khkACc1vjnkBAuTkKInexjBeThzZ63fERUch7deyTvPGH9BEQo/rDhwkEXziXOWnanz59oQ0hCXJeoDtoFr49EGEoqICKkHY3OUo7uUo6sy8hS64Z2mkC3abAw0Q1OgIgISV2i2q9Q7Y+suby0ga0xQUgbl+iUkXYMuksZOosZOksa7cUM3aaGTq3rRJJKZqaMdBZeBwVzRuFnu4gMFgICTnOFD1ipN2J2QXVAtoxzXNibwOKcEs7782jC+miQcDZalG5s3J91f1BI90YMIW1pdJdzzIw1IYRAVJOoDUTo35SgviHC4GgClUioiJB2NdoLObrLObpNjaxrwBowuXVG2gsZBLUBEuEsEIoQ1SWSmkJSV0gaEvXhBHFdQkYC7LR3eTZDay5Fd9nFKQ6GIWfSvEZJaXFD+zm82eQi7uLgcQSngh0SYgNS64lyOI1KIV3wMnu90bVea9MgAYhIgCRBWL8RLKwek3EBnykCCiLYnaskYAi6a7A40cH08y3kXRO0rL4hQt9Igrrz/ga2Chvg5Yw8Negs2IXNOjmyDkNnJgCxrYXM7pOcexEkRVCxRFyXiCsKMiKISCCJhA0utTW13Y6GzkxxqAOQVHIKJFk8ThGkM2MkrJMkIgH2UBa7eEwQfLwuXBBKogiqSZRFR+sroLBzJQBTHIzsT2T2NtUHZQUWRtJH3AbDF1Wx9co+1AYjMDNMzhYFdu5nlFizFvcp1AYixFW70JW6Qtoy6CzlaM2nVjglF9rbdGbAGNjIPbcaLiRZzzMWiCsSUWzPlzw11t03KIGt3mBYM0gek5MAGaC9mGH6WAvLUxlURboYzpl9BoRFiQqUwziNBLlzsowK83pqEEElElIJEBjGRcfkd4/bQcx215F7c5CAThkyAt7z2xfjtT+7BZVG9KrO1aWtHD+6YxwH/uYMKg0FYxBQ8IDQlyEYXhFUB1RsHc8gNna3g502gWBcCsEYCkGkf4Nes1gzZEz4yP+4Ehe9fijc66U2D9EqaUt+4dfRC6B6Z9/zhTOfazM8hLimcP2Hd4AZeORLE6gNRA6StuiHAMCCnZkrIKbgdpfA8/UTkLZngtY23yGENV2AxZ/8G4GxQZsxBkIQWs0U7/74xbjo9UPQmbEa2GOLz6kC4yVf93Lue66vYYeivvEjO0AAHvqrcdQGohJuZ82bP6KCq70SN1xXATGcWXPJKJ8PDN4OOSSbw886JWzcXcdrP7AVbACpxMtbwVdaOYILjo1hXP+RHQCAh780gepAFPBF4hL245KZ7A9u6oXR1klAVjBaWyHBFE4BHLhpcyvegxPIOjm27htElEiX93mVSYdfXL2EsAf/9R/ZASLgoS9NoDYQ27MoQBoh1ViAr+foaq/ZSSAHX5iSB8fMEMxgIpgS4CjAyLVBZSDCC2agX63CKT1GwqYbrvNn0pcnUR2MgtYEBSrHSMTgcyjIFWt6kiAoZV1GKdGTTDM2dLaBqymZQe2qJF5ll4+pjMuKlq9OMzsrV0UCQZOu+8XN6CxkPidiE3amN53vwd21FmWuSUAqkYirAipyX0pYgTlkgaXDqexhZXeO4Vdd5bbH9LJOjr/+T09g7MBcCIYBYP50G4/fedpCXro3hcCGcd2/3IE3/MJmdJYya/Yd7GOM3cM+eaf1ijKBcxVQD/ILQFUlqhsqqA7FSPoVoqp0wrKaJaWFX3xpEvuE3KtNOIKQtnPc/juHcPQHC3jqW2dKWgKM7unHcw/O48DXTkNIemEhfXgUncXMFqqgyPz2VEjTeQioUD/78Oa9DWzZ14faQIykEaE6FKM2nKDSHyGpK0SJhJKAjAgyElASQVivNuF87T8fwtgjS9iwo4rnHpzDzPFmWHwAuO7D2/DdPx3DU9+afFEhXfvhLWgv5aWAtVw4s/atq9YSJNQGI+x5x0awYcyfaGPuZAfLM11bNKKtuuvMwGQGOtUAAyoWIcfySj9zeoTz6BJqQxHAjKzFePwbk7jpNy4OjtH2qwaw6/oBfPMPngcEYd/Nm2A0Q0jqdRw+tANEhIe/PI7qQATW7JKrhHPpNXiJlLcBIDD2yDyOPbyI0csb6BtJsPO6IeiuxvJ0F4uTXbRmbRo7zzTYWJxNG3t2vdK9NQLQbeb4+n99GmMHllAfiqC1DbQrjQiH75/F9b+4HfXBGCZnkCJc/d5NOPn4Mv7+T4+DNePKd21eISSrlW/4oK0DeXj/OKr90cvq1lAvdgb5q9vUmHq+jfZCjii2ybXGpgSNkRib9jYAth+yOZuhNZcha2uwBuKaelGY5aevPdbj/MannsHT985gaHs1oNFga7KXZzI8de8ZXPeh7QEx3339EEYuqWL+ZBff/V9jAAFX3rJ5FU2yQmIAjzghiZBUPA8BFfl0e5crbxmB0cCpJ5dt0UfHYHk2gzgMxDWJpF+hsdHWHgxurQAMLEx20RhJzgOE+QmgAsJiZ2//6EUY3lnDoXunsTydIa5JRBX72eOKxKFvTeG179+CKJEwhqFiiStu3oh/+IsTqA1EuO+24yAB7Lv5bCEZw7jug9sRJQIHvjoBFauAvKxladYUqOpU4zXvG8EbPrgFJ59YxHM/WMDU801kHeMSazkWxrtQMSGuSdQ3xqg0ItSH4leyfMIijlzcwA0fa+DaD27Fk3dP4tC905g/lSJKBJI+ifnTKY48OIMrbtwUXnf5TcN4/I4JpE1G0lC4/89PAFhFSD0pG4JUAjJap5Q3GwMIgUPfmcFT987gkrcOYc9bNuCGj23H8kyG5x6cw9iBBXQXc0glwCnQTnN0FzW6zSUMbJK45I2DKCorXrmOAhtGYzjBm/7VTrzun2/B038/jYN3T2HmeAdsgKfumcIVN44Erag0Yuy9YSMOfHUC9aEIVJW4/8+PAwTse6cVkk+d//jvxvHY1yZQ7YsgIrKlwpF4aQh+rRokE+vLH/3BHA7fP4eBrQkuuW4QF79xCHvfMYyTTyzh+YfmsTzZhQHcH7e1268W+EBICoJK6hGuef8WXPXuzTj8/Rk8de8Ujh9YxNGH5nDx9RsCQLLvZzbi0LenoTVDSkLSF+HBL5yCVAKXvWMEAPDE3eM4ePcU+jcn4XyPE1twv24mjq3njKRPAcxoz6X40dcncPBbU9i6r4HdbxzC9b+wHTNjbYwdmMPSZNfCPfTK0pLVC1CLdhAwBwfBMENGApffOILLbxzBkQemMT/eApuh4AD0b6rikjcP4rkHFlDpV64bQuCxr00irit0l3McvHsWtY0VwDAMXHWQQvibhHUQUNrM0JlLEUUEiggqEUjqEgDhzJEWpo62MLyzgh3XDOHq945iYaKDow/OQapXjoRWCscDuJOHF7EwkWLPW4YhVOFaCZ+3cUHspW/ZWAiUClTgqndvxuSz7RBSkCDIROHA31oUotIfu4JIQDBD+PaWNbpxaxKQyQ3SpQydiGCYIWIBFQvIxHaZKUGYPdnB/OQk+jdXsHF3DSOX1NC36ZXhxeVdjecPzGPXtYOIYhkExgxsvrQfZ56bxN998jD2vHUIu14/iJp3blDsdC+oAIO5Gu8NO2oY3deHiWdaSKru3hKQsQqgqK8KIOOqVsXaU6rnlLDTmgPKqzsaRLn1SCJhIZ5IoDmf4cxzy8hTRqWxOaC49FMUkogEtl7ef1Z855Nvr3nvKPo2VTD5bAvPP7aIbfsaGNicuPRAr6BWSz1cdsMGtJcNlBIw2jZvac3g3GWjcx3uZfuH1g4kqzXbB5e2tUi176SzyCyljFxopJKgIgFOBDpNjW4zW5On8o8uIEGoD0UvugF3XzuI3dcOBm1ZtafWow/lonoGRnbVcfk7GFPH2ugs5kiXM3DbIDcG2iU4jeZw3vV0dKxLwq7UGqhdRYjPbYABoW2xCDEj04BJDbIlDd15BblxL5KEI/KpK+6pLn0xfDJkiZ3AOssZFk63kXeNiw9tI5fRJvx91hyKadYHLPVPighxRVh3OxWu08y3/HEovLS7QoNJuK6yV7YHV3YW7JlircLCRAfPfm8Wqqrs73Ob0xGKMbq3hi2X9RUmj4CD357Coe/MQSnqqVryTWvkmtWMYUjh6jvWsy5ORAJRVSKqSgjligKN3QlsbD9P6KBz59W5vIl/7DQC0QsLqlxL6B2Hgc0J6sMSD39l0uGJxed45rtzGNoe49I3D2HnNf145v5Z/PiOKSR1iTTrzaVZ58D0lHFrzTCZyzivl4BkJKAqAlFFQkjh6pFt9tSEClHYMljHBSCIfqq+W7ndvTWfojYY9wjHC2v2ZBONjQniiipVzBKu/JnNkJHAQ1+aQFJT9jxyScjpY11MPXcaT3xzCp1F23vKLu1CvtGV4BqOC9vK7mDzrfrrlg+KKgJJXUElNmvKoebAFTVq42oRrM21sQAFPOonfXks7MSP5/HA505i9lQHmy6t4j0fvxT1wSQUGpIkHHtkEc8/NIef/93LXdeEP5MYl98wApMzfvCXp1BpxK7gA6EcuDmdQURke31CIQ9Z006lAkxjAkcECaDTzl1d+HlCPX55o6pCfUOCuCaQuaLzoDVgxw8AwOfbCciqtlDxpyWcZ++fwp2fPALOgbiucOT+eTyy6zRu+Nhuy2HgPtzC6TaO3D+Hu/77Ybzn43sspuiSeEYz9t28CXlX477bTiCuSQj3uPcOA/IvUOpGoV4HhIv2SBKEzoJtuF6/OMjYWjeVKMhY2vpsY1wXgsumalsIL92b0V0FFYufsFmzqPEz903hjt89jCiWEHV7AEQVgfnxbk8A2llKcfj7M1AJ4eCd08hTgw/8zuWuTBchpf2a922B0YwHPncKpFe0h8MWy1hz6qTh2yq9B+KbDMiZfsPrW9XDAPKMnXNA0BCQsUKlL0FjOEb/pgR9Iwlqg7YjQVUFVEVCxPQTS9j5s+/Z+6fwjd87AhXZZmCT20VK2xoXXz/Y85qoovCB/3IZ3varO7D7zYN49r5Z7P/4E2gvZqGtUQiCyRmv/dmt2P6aBrLlvKgc1QZkTOBEYGNCEpBdBa53mIxrqymeu45OggFDA8h98xNZpJrZQAjbdh7HhKShwLl9o0IKxFX1jyCJFQBnCfCcO9XCNz55xMJQkX2PKiIsz2XY956NuPJdm4NmeOdndG8/Rvf2442/CMyPt/H0d6bw1L0TuOb9W4O5E4rwgy8cx/MPzSOqKNeTxIE6hsEQxlVS+ZabEnpCRVs5WKxgzFgPDRJMsCAvQbsdoHN2gZg1bVoztCZASqh6hMZIgkqfWnfh+L6dnuJBRygxMFrFTf9+J3RuN05UFegs57j8xiG877f2hHLd8mutk2N/Mbilijf90k5c+y92QEgREm0PfnEMD3z+JKJEFYdzqQheULkJz3U0AGexoZxLNc85YnEMQUCcCBd0WdusnRozA4IBoRyFihbQLIrW6XVwuH0bR2cpw/MPz+KKd27uiWvINZK99me3gQThvttOQLcZe28Ywnt/a6/VBlNkOssF7WUWLP8cT0f20F8fxwNfOI36cGzPXucMkSSUO5DJCYWck2A1q9Th7ZhLQgffuvYHEZBltgUlignVPoUospnFLLNmT7tuuSw1tpoys47E+iEBhKyT494/OYpjDy2gvZjj9T+3rSfe8RWf1/yzrTCacfKJJbzvt/eG2E1IwvOPzKJ/JMHwRfUeUgr4Ph7nGAhJeHj/Sfzwi+Po25g4lIQgJfc0ZQUwlSgwpZQ4u0Kg7AsYbb2gXqPtWitYmhsosihtp8kweYbqkELfcITBqrAcCFWJ2mAMENCcSTF7srM+brbbdXlX497/+Twmnm5hcFsVj+yfBAnC61x7iwcwfWb0dR/Yhtd9oDBjQhJ+9Hen8cDnTiJpKGzaU8Ou6wZx0esG0b+pUpgs99xHvnoSD+8fR2Nj4swUFUhpIKQuV9Kj17tjJ6TSJvC5ILFebfjefHaXNZrTKVRMELFEngFL0xmyrsHwjhpGdldRG1SIKgJDO6qoDSh02zqAgiTO48wB0F7KcN9njmPquS4GtlSQdTQaG2Ic+OokAJwlJCrxBPp8zON3jOOH/+e03URgjB9s4dTjTRwYmMDmPTXsun4IO68ZQG0oxqNfPYVHvzKO+oaoF9h0f8A3MpfZXlBqhWQigEUwe0wE4fiHSMCRZKyjiSNYzp3WbAZSOZKaRFxTSJcMJp5eQnsxx8VvGsLmvVWoWMBoIKmK9UnUkWUwGdxaQbdp0JrLoSoKJG3d3RN3TENFAle/d/Qsc+d/nn5+GT/84ilU+iLLxsaEpJ9AbJGPkz9exvEDS6hvjDCwrYLJp1tIanEghRCu9V4HZN+TyVAgqMAKUgzXOeW+L59XFDoN1+8MQsFJo1NGluZQy9rVj0nMHGti7kQLxx+tY/d1/dh2Vd/6eHDuMzQ2JHjjR7ahNZ9i7LEFjB1YxOJkChIC/VuqePKeWZASuOqWTb2a5Ly9jbvqeNvHduLBz59CpGTReO/OnKTPpu/TtsHkoWVEVevtGLfIsAW2kFSifilOGftGZYmbJzyJAsOWP51IEnKFNcNga27ggoQnVbO7SRu0lxjdpkaUWLR78tklTB5eQt9IBVuvbODStw5icLTykt1qa4t9gNpgjCtuGsGet27AySeXceyRBcye6CCuSDz5zRkICex756ZVzB1h302bQAT88IvjiCsyuNveFBrXphnFwrV5ljwtiR42rXKEQg45CJQAvh3UhSXkvUT3QqkIRkcFyrIeVT2eScTGBhx4AaQz9llHI+1oqEggqggsTrQxfbQJZoPrPrT1/JnfqcTLwICKJXa9fgC7Xj+AyeeaGHtkHpPPtvDY7VNgBq68eVOvC+7M3RU3brLe2ZcnEVVshZIx7pwwPnXCkIJ6QFNy1DMFY4aNIDgYsSI2CibQvefA1uWYTYQiRJogIrmOGuT/mLSKKrjUbs+WL4GkdbX1sobs2Kxi1tbrmvIuV8z682XzJXVsvqSOxTMdjD22iMP/MI88ZVzzns2rtite9nZbfPjo35yx6RM2IBSULuTwtMCWyGU2GNHrtIniJPJoaUE4WPCgClE8V0gCSeP5idcpYSdFIBvyhLFCUkjWwaygVjYMnRpLaITzt3BlvK1gnKIeT7N/UwVXv7uCvW8bxnM/nMXxx+ew/arBnoQdCUtnufetGyEjgQN/OwUpLf2MJRR0p5NxqWzXLB1ws0BwChALQHCggSEvKuFNnehpuff0zySKYpW1hPBrygcxcRE5lwiGwk6RVGQkHSFfmYjiZXERrAKylt117sm5FOYvqUvse+eI5ZgjXr2SB0DeMY7exjZAkyfFBaCJQezOXRRt9QUphQVB7XKI4qP6JF3IqlKo22AgOAu+VGAdoZ7SLqAid1/gYFwQNhAXvG308hyC1V63PJNi8UyK+lCM+gYJFcvVzZ9byGiV3iTvPBz6zhSeuGsGcU3a3S58pI+e7uxAtSlK/G/uPbqIqEjKBV0xRQuLJ791NzTGc6aa9a2LE44gj/2bEQ7M4IJCvww8MeFltT/6HdpeTJGnBn0bK0UKXQIP/804CITqoMKWy2rY9YZBNDbEvTaUsKpD4u/z1Hem8OQ9szYM8CyNhFK6mwPlWLm/lGxi1AEJXqii4K4uuEcLtJq9k+HU0LAjpeWCLet80OwioypR6bNIgYgpgIksyEbN5e/dY6aM+NJazhcrnLSd4+ufeAaPfW087Eo2jNpgjB1XN7A8lWJxootD357FnZ96DmOPzfUyCJdqzlYK5+nvTOHgPTOoNOTZ48P8dANybrWrAA2/IzigmAOnKVNxJgUebuKwgY3/1yHmtgDUBOdj3dINUglU+iJU+mzTcFwVrgfV2l/f1S2ILKotASlW0E2uocCj28pw56eexfSRDsYeXbTt7CVNvORNg8hTy+7YWkix/TV92HpFf2GaVjoQLnFGAjh47xSe+KYza47YjWHctx6Ot0Ufnk7AGBOYQwwMoJxtIy7olj1NTkmQKHNmo6DR4RJizry2wsU1o2REDBnbgDSuWWFVGxJJzTInkmMtZEfqyWJtXd6hw7qV465PH8HpJ1tobIyxNJnjyA9me9IAA6NVbL+6gTPPLmPX6/vw5n+9DZELOkkApw8t4p4/PoJjj85B5yYwRB68dxJP3DUFVSHkqUaeGehM22IXzgGjwZn7MhyyosYYGKMDm5fRtmeKNYMzY0cA5JZtnnOnKamr18gZnDOQM6ABztxrMgPdMSXy/3U4g2wqoXALSdnvZCyhNEIVpdYGOjPBlXypyiJrepxw/vthjB9sojqgYLSBSghP3XMG+24egRAi7LjLbhyGMYwbPrYLYJuOFopw8sl53PvHx6AzxuknlzG4Nca+W0bQWczx4zvOIKkrZK0skMdyoH+mYoaEoB4SdILH37iYFeDgHuPLoH1JlSOO89TMwcwG770IR3TXIHchyHm52d5OpksZmjMdSOVY5l07nzFsmeSlABLA5IQ8s+8ySuhF2098CVLaynHXHxzG+NNN1DZEtmyLAWM0LnvnaHBVvTZuvbIf264csKl444RzcB53/8FzgCFbzC+AmeNdfO/PjkNKS0Zo2T8KqN9wkbwTVObALnJDoNIYAu1JkaxmlCiyizkPJVKi4hwsE1lY8592NXRuetb4/GoStEFnIYMUBJEQknoEFUsIhcDoRATb3qekpSPTZOknX8SVTjs5vvmHhzF5qIXaoLKFf1Kgu5ThrR/djqvfveXsGQ4lei8hCacOzuOePzwKgnVgjDs/VEJgY11tHVIGrrDQ0UEHOs7SbAcqaRFcKt3GUxyoPv3rvOYxl/NAQA9nqBOaj7IM22TmutIy+2I9wwzd1MjbBjIhRFVl+y1jcnPaOEBCUSyQdc3ZKW/32TtLGe7+o8OYOtJBzeVdiBhpO8dbf2U7rnrXqCs2p1War9ygqacWcM8fHbXmNiLbSeAXQhcxfLm817P+cmnukC809AXuvklr5VmJUp1BzzwJlAZ5BE+gNJyDqPj9Cuu0Tmi2JQIPLiUzsjZDdzOkKoeqSMRVBZlY6mQwIGOB2eMd5KmGXAUYJEmo9KmADjDb0qg3/5ttuOpdo66M1i7u4lQH/SOVHuHMHG/i3j85CkAgismST5QRjVIBR1hGYQtgCpSby+VtwSujnsRO7ygdcpWjBYIRhtwU/ES+5FeUgjM2PfDOWsFjsRaox+bRheWXDuUrHMjFs+UMzZkumjNddJYypG07cWppKsXYowu97FDunklN4ZbfvBS7rhtAZ1Ej62i8+ZcL4fiN8ez907jj955Bt9Xba5Q0bGGkj/KFFBClclsqgaTF2eMp1bw/TCVcrODE6/34FDC0cn7Hn2WeFF1QkdIm6Uy/QMDmWIrgK/A5dNitLVCNBaLEZgFVXBCMk7BcxMYhTLqTozufojXTRWumC2OAx75+BlPHmhZcLQnJwiECN/3Gblx0XR+u+8gWXHXLaHiOkIQjD8zg+//7BJbOZDj64FyPuWlsSLDn7RvQbeZ2s5hSQTr1hqF0FotrkTKwuwc9SHQhJCrBjz5AL/qlpCwcJhIFWbrlQ6AgOCltylsqj2bTOmmQu5K+GP2jVVT6JFRiGa3sID5ReEXGFK2SmbZU/XMplia7+NYfPY8zzy2Hipki82h3/i3/8VK85n1bQrpFSMJzD87ge7eNQSrLtPvs/TMF5b577WU3bERjQ2QpOkPSzB3sKIZLlZNt5KeolJ0O6p1LFIZC9XAjUmjXL/epipBlpULbnBRFaRiHlNL9LCDPAadcc6CqKhL14QrqwxVUByJEVWEnTknhWNod63w4BC15uEk1mlMp7vxvRzDx7FIvhRedXSBCgnDskVl8/7MnkNSkTXDFhKmjbYwfWihF6sDA5iqGL6oiT02A94WwO7aHU9WfL8FpEKU150D1aXyE7xyBnqkqgUneD9fgUhE9wgYRXgtRmo0kXSwVRn9ifStLdWrHzYAJUaJQHYzRGK6gOhQhrgo7KVEJqMi63vbMsibQGFsKmy4afOP3j2D86aWzeNaKXQuMP7uI+z57AnG/gkpkMYkRwNPfnenB1h77v6cwfqgJlYiA5VEJUacw6cvXB5Rjkt7DX5DoKdEta4kfBOWZ5gMYzRSERSVczpcGsPZphbKbb037WqnaxBqqntBtaixPpWgvZsi6Gjq3M+qSeozGcIL6cIy47oTjJljZBRJhl4rI5mDu/OThVYXkC/+Gtlax83UDyDtA5Bg5SBIqAxHGDy5jYbINoQgHbj+FR74yac2tQGmeEMLkEXa5eTsY6mzUnJz7Wx7MVNQVeKfAaZ8vmwqlx5aG2iOlbLy2Uc/6eX64QGhOdE5pGLGWujTWtu6gNZeiOZ2is5BZqIKtQOKqHY9WH05Q6VdQiYCMrAZZpMGunEpsVdA3fv9ZjD+9eJa5IwCVRoS3/8pObLu6gdaChowjSGWdE50xjj44h6e+PYnHbp9EY8g+5jeBdYkp1BYUkPNqaXMKDVmlogLgLGEVJsw/v6yFZWeiCFQLD7HsOPgc0blMQVmTmx0OUVgwsLOYoTXTRXuhi7Sbw+Q2N6ISO523MZygOqCQ1CVE5HaqtLtJVSSMBu781GGMP3O2kJgtev6OX92BrVdXsTTdteCrASp9EY7cN4sffe0M6sOxPYhV6TAWRXKtGNm5ciihRzI4oAQhCuohH+dQBFKM5ixN+wIXg3pL3QrMJTPnBWrKM16LbOu6udkisgOX7A/2E+quQXdJozWbobWQotvO3TQsQEiJuB6jMmjNX+H9WXMTVQRMRrjzk0fO0iQKQpK48d/txtarapg70bHTuzIgz4EodnGHsmVMwlF8CWkJbqWi0iwJLkXuHIBM7xAwek1OkSGlYh4eFe41RKkHlxBaQXtK1Jh7MsPlEjAirKOJc1dtIEJlMEbUiCAiETKsAMAZkC3n6MxnaM+n6LZy5JltapJSQMUK1cEE9aEY1YEYSUOCJBBVbf3ZXZ8+golnll5ASAI3/4eLcclbBtCcS5F3NLK2QbdjoHMOEbk3gVEiISIrrCgRQbvK9pp7ahvI5X3gYijuJZlwdMrF6hd1b0HbRFkAvU3EXGLC6EmZgyCidRRQ/+YElbodwlTpjxDVFWRCVpucx8SakbU0uos52gspOk07HNB6MgSRKDsXaMgKK67ZLC0zcNenj5xl7jz6oCKJwa2JTWlkGrrrhNSyX1nXdbVpAyK2VNGxgEocn1BUaFcxR8GNuTaljjcGtEbIAxW9PVwSmDvfuDwB16e2V6SOA6QkSsXyRW6+P/AYndcZZB8e2V1FVLFqHdcUKv0KlcEESV8MFQauuzxJzshaBulihs6i1aisa8A5g4wNbmVVoToUoToQoW9jDBUL3PvHR3viJN9v+vBXTuKHXxpHXFOuqw/gHNCpQd4xSJsG3WWDLAV07knIXXCoAJVYFEQ5AqiQYpAeROCQuvA73Rggz43lJQojn3unCpsewgqE1ARz2dFYCbra3FNUI2ze0+gxf/wCVMCrCijPbbLCT+0dGK1iw0UVdJZyi2W54DGpK1T7YyQDEVRNQialg9oAeRtImxqdRTsnNe244X+53VkqUYhrEfo2VZA0InzvtmOYPLLkAl/gka+exCNfHrc8O977ErCjrjz1vjbIunbaZHvZoNOyUyd1qsGmGHkmlSV7ihLpclXCwTHFuWBn8BWmk5nC3CLPHG+MFVxIdzvOA/8/O0TFe5BeU70w0pbGlssbGBh1BLZOBEKIFKtUCKhVBGaEECeLE9W+5Kp3j+D0wWPIOuRmBiEM5BNVCZVI6EyHgkWdud2WWyI7k+fQqYGMbS+RNG4mnludpBHBpIwHPncSb/+1nZh4ZgkHbp9AbSiyH5DQM/RbELvdX8AznOY2aSiNE4qBiqyGS2kRZiEIRgmwa9+0iUebETVuxFkgjSr3wfqxz6UqHw3T29HAFE46KtXksbbnlclshc81HxgtzkVhgUMhxIm1CMjmajqdh6Mo+rde6syMjRfV8bqf24QHv2B7bGRs2TXIVfUrRZBCQSsDHVsBeWEJZ/d1Zntb8y5DJi5lHktIZe2/iARMDvzDZ09C5xobd9aQdQ3yrkGeGRhyBBqhu6CcsCpyOibnMEkyTy1I6YXkvxcRQSgORfQ6p9JwkFLq2v1ftE46RJ9K5c/gXmYsNjAQwWkQ0qbmO8sZ3v5rOzG8s97TKgOA0jT94VryQQYATp06deeePXu6UsrI9h8RsWFccdMIjGY89KXTAAlU+9yURcfQAXK0MbHlTctzAd21Zki7wBbG8qgZZnCuYTJjSQEj6YBSi0QoZROAImEkrggjT40l0nCNy1SelVOSEIemZ9cknLkROpJgjABgoCLn5TlEOkpcDUWppd4YFCM4PUrgK4JEYQJDQB+8ORE8ODZAe1FDJYS3fXQHrrhpU1k4DEBordvz8/N3AcCtt95qVgt1yjCIJCLdarU+W61WfwW2/kSVMbDJI0s4cPskJp5pIu8aqFiChBWOUD6G4FB1anJ76OrU0XRlXCpIt2XFIrLjNaXzwEJBJBVRPJjBqdXMPLfohs5LNQKlzjri0mxHWlmyyhDSgb1kz1SpnMkVxWTJ4AQYdhU9li8CJWDVOw4FsOrep0sWxjWBLfsauPbnt2LTJY0ezTHG5EII1W63b6vVar/u1/6lBCQAYGxsbPP27dt/LKUcccUtsiwkAJg50cTEM00snkntbDtJJVLvApMrdqCbherGszCjpzXFOxhSiZ5pKuX2E3J11My2807nTkNKEAqV70ulHe6hHFGg3EUM48wfUUh5hMe4x3oVtW3GtuKEAhEuKm5FROjfnGB0bwND22s9JWYegwYg8zyfnJ6efs3o6Oj0rbfeik984hMvXXK6f/9+CQATExM3Z1mWMjNrrTNmNszMxvjvLlxruYxhNiYsmGHmlJk5y7Lu7OzsO8qK8UJoDl7I1E1MTNwyPDz8eaXUFu+F+9fawr8V6fGXQMZf+Bd4Wd0Q/GL3W0Nj2JoWY62fCavlt+AKasLTlQtlTs/MzPzy6Ojot1czbWstZpcAcPz48W2tVuszeZ4vX9CH87vyPF9qtVp/NjY2trW8xmvcQy+sSQAwPj6+q7+//11SyusBbBdCqBeLgv+pX+S4X4wxOYCTWuuHFhYW7t66devYyrU9v842ZnopSV+4zs0yrXVT0zneWJTgIXNhqc/pCutGRBfW7sJ14bpwXbiA/wero5AG1Ew7XAAAAABJRU5ErkJggg==" class="logo-img" alt="SEO FARM">
+      <div class="logo-texts">
+        <span class="logo-name">SEO FARM</span>
+        <span class="logo-sub">Мультиагентная платформа</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Платформа -->
+  <div class="nb">
+    <div class="nb-lbl">Платформа</div>
+
+    <div class="ni active" onclick="go('dashboard')">
+      <div class="gico">
+        <svg class="ico-wh" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+      </div>
+      Дашборд
+    </div>
+
+    <div class="ni" onclick="go('accounts')">
+      <div class="gico">
+        <svg class="ico-wh" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+      </div>
+      Аккаунты VK
+    </div>
+
+    <div class="ni" onclick="go('settings')">
+      <div class="gico">
+        <svg class="ico-wh" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      </div>
+      Настройки
+    </div>
+
+    <div class="ni" onclick="go('logs')">
+      <div class="gico">
+        <svg class="ico-wh" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+      </div>
+      Логи
+    </div>
+  </div>
+
+  <!-- Агент 1 -->
+  <div class="nb">
+    <div class="nb-lbl">Агент 1 — VK Группы</div>
+
+    <div class="ni" onclick="go('vk-keywords')">
+      <div class="gico">
+        <svg class="ico-wh" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </div>
+      Ключи
+    </div>
+
+    <div class="ni" onclick="go('vk-groups')">
+      <div class="gico">
+        <svg class="ico-wh" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      </div>
+      Группы
+    </div>
+
+    <div class="ni" onclick="go('vk-media')">
+      <div class="gico">
+        <svg class="ico-wh" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+      </div>
+      Медиа
+    </div>
+
+    <div class="ni" onclick="go('vk-activity')">
+      <div class="gico">
+        <svg class="ico-wh" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      Активность
+    </div>
+  </div>
+
+  <!-- Агент 2 -->
+  <div class="nb">
+    <div class="nb-lbl">Агент 2 — Мониторинг</div>
+
+    <div class="ni" onclick="go('monitor-queries')">
+      <div class="gico">
+        <svg class="ico-wh" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </div>
+      Запросы поиска
+    </div>
+
+    <div class="ni" onclick="go('monitor-leads')">
+      <div class="gico">
+        <svg class="ico-wh" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      </div>
+      Лиды
+      <span class="nbadge" id="leads-badge" style="display:none">0</span>
+    </div>
+  </div>
+
+  <!-- Агент 3 -->
+  <div class="nb">
+    <div class="nb-lbl">Агент 3 — Статьи</div>
+    <div class="ni" onclick="go('articles')">
+      <div class="gico">
+        <svg class="ico-wh" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>
+      </div>
+      Статьи
+    </div>
+  </div>
+
+  <!-- Планировщик -->
+  <div class="sched-w">
+    <div class="sched-top">
+      <div class="flex ac gap8">
+        <div class="pdot" id="sched-dot"></div>
+        <span id="sched-lbl">Платформа активна</span>
+      </div>
+    </div>
+    <div class="sched-btns">
+      <button class="sched-btn" onclick="API('/scheduler/start','POST').then(loadDash)" title="Запуск">&#9654;</button>
+      <button class="sched-btn" onclick="API('/scheduler/pause','POST').then(loadDash)" title="Пауза">&#9646;&#9646;</button>
+      <button class="sched-btn" onclick="API('/scheduler/resume','POST').then(loadDash)" title="Продолжить">&#9654;&#9654;</button>
+      <button class="sched-btn" onclick="API('/scheduler/stop','POST').then(loadDash)" title="Стоп">&#9632;</button>
+    </div>
+  </div>
+</aside>
+
+<!-- ══════════════ MAIN ══════════════ -->
+<div class="overlay" id="overlay" onclick="closeSidebar()"></div>
+<main class="main">
+  <header class="topbar">
+    <button class="burger" id="burger" onclick="toggleSidebar()" aria-label="Меню">
+      <span class="burger-line"></span>
+      <span class="burger-line"></span>
+      <span class="burger-line"></span>
+    </button>
+    <span class="page-ttl" id="page-title">Дашборд</span>
+    <div class="topbar-r">
+      <span id="clock"></span>
+      <span id="top-chip" class="top-chip" style="display:none"></span>
+    </div>
+  </header>
+
+  <div class="content">
+
+    <!-- ════════ ДАШБОРД ════════ -->
+    <div class="section active" id="sec-dashboard">
+      <div class="stats-row" id="stats-row"></div>
+      <div class="g2">
+        <div class="card">
+          <div class="ctitle">
+            <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
+            Быстрые действия
+          </div>
+          <div class="qa-grid">
+            <button class="qa-btn" onclick="go('vk-keywords')">
+              <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+              <div><div class="qa-lbl">Создать группы</div><div class="qa-sub">Агент 1 — VK</div></div>
+            </button>
+            <button class="qa-btn" onclick="runMonitorNow()">
+              <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+              <div><div class="qa-lbl">Сканировать</div><div class="qa-sub">Агент 2 — комментарии</div></div>
+            </button>
+            <button class="qa-btn" onclick="API('/vk/reposts-now','POST').then(()=>notify('Репосты запущены','success'))">
+              <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div>
+              <div><div class="qa-lbl">Запустить репосты</div><div class="qa-sub">VK — все группы</div></div>
+            </button>
+            <button class="qa-btn" onclick="go('articles')">
+              <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></div>
+              <div><div class="qa-lbl">Добавить статью</div><div class="qa-sub">Агент 3</div></div>
+            </button>
+          </div>
+        </div>
+        <div class="card">
+          <div class="ctitle">
+            <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+            Расписание автоматики
+          </div>
+          <div id="auto-sched" style="font-size:0.92rem;color:var(--txt-2)">Загрузка...</div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-row">
+          <div class="ctitle" style="margin:0">
+            <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+            Последние лиды
+          </div>
+          <button class="btn btn-soft btn-sm" onclick="go('monitor-leads')">Все лиды</button>
+        </div>
+        <div id="dash-leads"></div>
+      </div>
+    </div>
+
+    <!-- ════════ АККАУНТЫ ════════ -->
+    <div class="section" id="sec-accounts">
+      <div class="card">
+        <div class="ctitle">
+          <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+          Добавить аккаунт VK
+        </div>
+        <div class="frow">
+          <div class="fg" style="flex:2">
+            <label>Токен пользователя VK</label>
+            <input type="password" id="new-token" placeholder="vk1.a.XXXXX...">
+            <span class="hint hint-w">Нужен токен аккаунта, не группы. Запусти: python get_token.py</span>
+          </div>
+          <div class="fg">
+            <label>Заметка</label>
+            <input type="text" id="token-note" placeholder="Аккаунт 1">
+          </div>
+        </div>
+        <div class="flex gap10 mt12">
+          <button class="btn btn-p" onclick="addAccount()">Добавить токен</button>
+          <button class="btn btn-ghost" onclick="checkAccounts()">Проверить все</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ctitle">
+          <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></div>
+          Все аккаунты
+        </div>
+        <div class="tw"><table>
+          <thead><tr><th>ID</th><th>Пользователь</th><th>Токен (hint)</th><th>Статус</th><th>Действий</th><th>Групп</th><th></th></tr></thead>
+          <tbody id="accounts-body"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- ════════ НАСТРОЙКИ ════════ -->
+    <div class="section" id="sec-settings">
+      <div class="g2">
+        <div class="card">
+          <div class="ctitle">
+            <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+            Общие
+          </div>
+          <div class="fg"><label>Бренд / название проекта</label><input type="text" id="s-brand" placeholder="Частная школа Честная"></div>
+          <div class="fg mt12"><label>Регион</label><input type="text" id="s-region" placeholder="Тюмень"></div>
+          <div class="fg mt12"><label>Ссылка на сайт</label><input type="text" id="s-site" placeholder="https://mysite.ru"></div>
+        </div>
+        <div class="card">
+          <div class="ctitle">
+            <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></div>
+            VK параметры
+          </div>
+          <div class="fg"><label>Ядро-группа VK (откуда репостим)</label><input type="text" id="s-nucleus" placeholder="https://vk.com/club123456"></div>
+          <div class="fg mt12"><label>Базовое описание групп</label><textarea id="s-desc" placeholder="Расскажи о проекте..."></textarea></div>
+          <div class="fg mt12"><label>Текст закреплённого поста</label><textarea id="s-pinned" placeholder="Текст закрепа..."></textarea></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ctitle">
+          <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12 19.79 19.79 0 0 1 1.61 3.44 2 2 0 0 1 3.58 1.27h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L7.91 8.35a16 16 0 0 0 6 6l1.16-.9a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 15.7z"/></svg></div>
+          Telegram для менеджеров
+        </div>
+        <p class="hint" style="margin-bottom:16px">Когда агент находит горячий лид — сразу пишет менеджеру.<br>1. Создай бота через @BotFather, получи токен.&nbsp; 2. Напиши /start боту, узнай Chat ID через @userinfobot.</p>
+        <div class="frow">
+          <div class="fg"><label>Telegram Bot Token</label><input type="password" id="s-tg-token" placeholder="1234567890:AAF..."></div>
+          <div class="fg"><label>Chat ID менеджеров (через запятую)</label><input type="text" id="s-tg-chats" placeholder="123456789,987654321"></div>
+        </div>
+        <button class="btn btn-p btn-lg mt16" onclick="saveSettings()">Сохранить все настройки</button>
+      </div>
+    </div>
+
+    <!-- ════════ VK КЛЮЧИ ════════ -->
+    <div class="section" id="sec-vk-keywords">
+      <div class="g2">
+        <div class="card">
+          <div class="ctitle">
+            <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+            Добавить ключ
+          </div>
+          <div class="fg"><label>Запрос</label><input type="text" id="kw-q" placeholder="платные школы тюмень"></div>
+          <div class="fg mt12"><label>Регион</label><input type="text" id="kw-r" placeholder="Тюмень"></div>
+          <button class="btn btn-p mt16" onclick="addKeyword()">Добавить ключ</button>
+        </div>
+        <div class="card">
+          <div class="ctitle">
+            <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></div>
+            Массовый импорт
+          </div>
+          <textarea id="kw-bulk" placeholder="платные школы тюмень&#10;частная школа тюмень&#10;обучение тюмень" style="min-height:108px"></textarea>
+          <button class="btn btn-p mt12" onclick="importKeywords()">Импортировать список</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-row">
+          <div class="ctitle" style="margin:0">
+            <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+            Все ключи
+          </div>
+          <button class="btn btn-ok btn-lg" onclick="startGroups()">Создать группы для всех</button>
+        </div>
+        <div class="tw"><table>
+          <thead><tr><th>ID</th><th>Запрос</th><th>Регион</th><th>Статус</th><th></th></tr></thead>
+          <tbody id="kw-body"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- ════════ VK ГРУППЫ ════════ -->
+    <div class="section" id="sec-vk-groups">
+      <div class="card">
+        <div class="card-row">
+          <div class="ctitle" style="margin:0">
+            <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
+            Созданные группы
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick="loadVkGroups()">Обновить</button>
+        </div>
+        <div class="tw"><table>
+          <thead><tr><th>Название</th><th>VK ID</th><th>Статус</th><th>Репостов</th><th>Создана</th><th></th></tr></thead>
+          <tbody id="groups-body"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- ════════ МЕДИА ════════ -->
+    <div class="section" id="sec-vk-media">
+      <div class="g3">
+        <div class="card">
+          <div class="ctitle">
+            <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
+            Аватары (1:1)
+          </div>
+          <div class="upzone" onclick="document.getElementById('av-f').click()">
+            <input type="file" id="av-f" accept=".jpg,.jpeg,.png" multiple onchange="uploadMedia(this,'avatars')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="30" height="30"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Нажмите для загрузки<br><span class="hint">Квадратный формат, JPG / PNG</span>
+          </div>
+          <div id="av-list" class="mt8 hint"></div>
+        </div>
+        <div class="card">
+          <div class="ctitle">
+            <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg></div>
+            Обложки (1920x768)
+          </div>
+          <div class="upzone" onclick="document.getElementById('cv-f').click()">
+            <input type="file" id="cv-f" accept=".jpg,.jpeg,.png" multiple onchange="uploadMedia(this,'covers')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="30" height="30"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Нажмите для загрузки<br><span class="hint">Точно 1920 × 768 пикселей</span>
+          </div>
+          <div id="cv-list" class="mt8 hint"></div>
+        </div>
+        <div class="card">
+          <div class="ctitle">
+            <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><polygon points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg></div>
+            Медиа для закрепа
+          </div>
+          <div class="upzone" onclick="document.getElementById('md-f').click()">
+            <input type="file" id="md-f" accept=".jpg,.jpeg,.png,.mp4,.mov" multiple onchange="uploadMedia(this,'media')">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="30" height="30"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+            Нажмите для загрузки<br><span class="hint">JPG, PNG, MP4, MOV</span>
+          </div>
+          <div id="md-list" class="mt8 hint"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ АКТИВНОСТЬ ════════ -->
+    <div class="section" id="sec-vk-activity">
+      <div class="g2">
+        <div class="card">
+          <div class="ctitle">
+            <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div>
+            Репосты из ядра
+          </div>
+          <p style="font-size:0.92rem;color:var(--txt-2);margin-bottom:18px;line-height:1.7">Берёт новые посты из ядра-группы и репостит во все созданные группы.<br><span class="hint">Автоматически: один раз в день</span></p>
+          <button class="btn btn-p btn-lg" onclick="API('/vk/reposts-now','POST').then(()=>notify('Репосты запущены','success'))">Запустить репосты</button>
+        </div>
+        <div class="card">
+          <div class="ctitle">
+            <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+            Лайки и комментарии
+          </div>
+          <div class="frow">
+            <div class="fg"><label>Лайков на пост</label><input type="number" id="act-likes" value="3"></div>
+            <div class="fg"><label>Комментариев на пост</label><input type="number" id="act-comments" value="1"></div>
+          </div>
+          <button class="btn btn-ok btn-lg mt12" onclick="runActivity()">Запустить активность</button>
+          <div class="hint mt8">Авто: раз в 3 дня. Не более 5 лайков и 2 комментариев.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ════════ ЗАПРОСЫ МОНИТОРИНГА ════════ -->
+    <div class="section" id="sec-monitor-queries">
+      <div class="g2">
+        <div class="card">
+          <div class="ctitle">
+            <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></div>
+            Добавить поисковый запрос
+          </div>
+          <p class="hint" style="margin-bottom:14px">Агент ищет людей, которые пишут об этом в комментариях VK. Пример: «ищу частную школу тюмень»</p>
+          <div class="fg"><label>Запрос для поиска</label><input type="text" id="mq-q" placeholder="ищу частную школу тюмень"></div>
+          <div class="fg mt12"><label>Регион (необязательно)</label><input type="text" id="mq-r" placeholder="Тюмень"></div>
+          <button class="btn btn-p mt16" onclick="addMonitorQuery()">Добавить запрос</button>
+        </div>
+        <div class="card">
+          <div class="ctitle">
+            <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg></div>
+            Массовый импорт запросов
+          </div>
+          <textarea id="mq-bulk" placeholder="ищу частную школу тюмень&#10;посоветуйте школу&#10;где учиться тюмень" style="min-height:132px"></textarea>
+          <button class="btn btn-p mt12" onclick="importMonitorQueries()">Импортировать</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-row">
+          <div class="ctitle" style="margin:0">
+            <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></div>
+            Активные запросы
+          </div>
+          <button class="btn btn-ok btn-lg" onclick="runMonitorNow()">Сканировать сейчас</button>
+        </div>
+        <div class="tw"><table>
+          <thead><tr><th>Запрос</th><th>Статус</th><th>Лидов найдено</th><th>Последний скан</th><th></th></tr></thead>
+          <tbody id="mq-body"></tbody>
+        </table></div>
+      </div>
+    </div>
+
+    <!-- ════════ ЛИДЫ ════════ -->
+    <div class="section" id="sec-monitor-leads">
+      <div class="card">
+        <div class="card-row">
+          <div class="ctitle" style="margin:0">
+            <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+            Найденные лиды
+          </div>
+          <div class="flex gap8">
+            <button class="btn btn-soft btn-sm" onclick="filterLeads('new')">Новые</button>
+            <button class="btn btn-ghost btn-sm" onclick="filterLeads('processed')">Обработанные</button>
+            <button class="btn btn-ghost btn-sm" onclick="filterLeads(null)">Все</button>
+            <button class="btn btn-ghost btn-sm" onclick="loadLeads()">Обновить</button>
+          </div>
+        </div>
+        <div id="leads-list"></div>
+      </div>
+    </div>
+
+    <!-- ════════ СТАТЬИ ════════ -->
+    <div class="section" id="sec-articles">
+      <div class="card">
+        <div class="ctitle">
+          <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></div>
+          Новая статья
+        </div>
+        <div class="fg"><label>Заголовок</label><input type="text" id="art-title" placeholder="Лучшие частные школы Тюмени 2025"></div>
+        <div class="fg mt12"><label>Текст статьи</label><textarea id="art-content" style="min-height:224px" placeholder="Текст статьи..."></textarea></div>
+        <div class="fg mt12"><label>Теги (через запятую)</label><input type="text" id="art-tags" placeholder="школы, образование, тюмень"></div>
+        <button class="btn btn-p btn-lg mt16" onclick="addArticle()">Сохранить статью</button>
+      </div>
+      <div class="card">
+        <div class="ctitle">
+          <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+          Все статьи
+        </div>
+        <div class="tw"><table>
+          <thead><tr><th>Заголовок</th><th>Статус</th><th>Добавлена</th><th></th></tr></thead>
+          <tbody id="articles-body"></tbody>
+        </table></div>
+      </div>
+      <div class="card" id="pub-panel" style="display:none">
+        <div class="ctitle">
+          <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></div>
+          Публикация статьи
+        </div>
+        <p class="hint" style="margin-bottom:16px" id="pub-info"></p>
+        <div class="plat-grid" id="plat-grid"></div>
+        <button class="btn btn-p btn-lg" onclick="publishArticle()">Опубликовать на выбранных платформах</button>
+      </div>
+    </div>
+
+    <!-- ════════ ЛОГИ ════════ -->
+    <div class="section" id="sec-logs">
+      <div class="card">
+        <div class="card-row">
+          <div class="ctitle" style="margin:0">
+            <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg></div>
+            Логи платформы
+          </div>
+          <div class="flex gap8 ac">
+            <select id="log-filter" onchange="loadLogs()">
+              <option value="">Все агенты</option>
+              <option value="vk_creator">VK Создание</option>
+              <option value="vk_repost">VK Репосты</option>
+              <option value="vk_activity">VK Активность</option>
+              <option value="comment_monitor">Мониторинг</option>
+              <option value="article_publisher">Статьи</option>
+              <option value="scheduler">Планировщик</option>
+            </select>
+            <button class="btn btn-ghost btn-sm" onclick="loadLogs()">Обновить</button>
+            <button class="btn btn-soft btn-sm" id="auto-log-btn" onclick="toggleAutoLog()">Авто-обновление</button>
+          </div>
+        </div>
+        <div class="logbox" id="logbox">Загрузка...</div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</main>
+<div id="notif"></div>
+
+<script>
+// ── ЯДРО ────────────────────────────────────────
+const API=async(p,m='GET',b=null)=>{
+  const o={method:m,headers:{'Content-Type':'application/json'}};
+  if(b)o.body=JSON.stringify(b);
+  return(await fetch('/api'+p,o)).json();
+};
+const esc=s=>String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+
+function notify(msg,type='info'){
+  const n=document.getElementById('notif');
+  const c={info:'var(--accent)',success:'var(--ok)',error:'var(--err)',warning:'var(--warn)'};
+  n.style.borderColor=c[type]||c.info;n.style.display='block';n.innerHTML=msg;
+  clearTimeout(window._nt);window._nt=setTimeout(()=>n.style.display='none',4400);
+}
+
+function pill(s){
+  const m={
+    done:       ['Готово',      'p-green'],
+    active:     ['Активен',     'p-green'],
+    creating:   ['Создаётся',   'p-amber'],
+    pending:    ['Ожидает',     'p-purple'],
+    error:      ['Ошибка',      'p-red'],
+    failed:     ['Ошибка',      'p-red'],
+    invalid:    ['Неверный',    'p-red'],
+    paused:     ['Пауза',       'p-amber'],
+    new:        ['Новый',       'p-green'],
+    processed:  ['Обработан',   'p-gray'],
+    spam:       ['Спам',        'p-gray'],
+    draft:      ['Черновик',    'p-purple'],
+    published:  ['Опубликован', 'p-green'],
+  };
+  const[l,c]=m[s]||[s,'p-gray'];
+  return`<span class="pill ${c}">${l}</span>`;
+}
+
+// ── НАВИГАЦИЯ ────────────────────────────────────
+const TITLES={
+  dashboard:'Дашборд', accounts:'Аккаунты VK', settings:'Настройки', logs:'Логи',
+  'vk-keywords':'Агент 1 — Ключи', 'vk-groups':'Агент 1 — Группы',
+  'vk-media':'Агент 1 — Медиафайлы', 'vk-activity':'Агент 1 — Активность',
+  'monitor-queries':'Агент 2 — Запросы поиска', 'monitor-leads':'Агент 2 — Лиды',
+  articles:'Агент 3 — Статьи',
+};
+const LOAD={
+  dashboard:loadDash, accounts:loadAccounts, settings:loadSettings, logs:loadLogs,
+  'vk-keywords':loadKeywords, 'vk-groups':loadVkGroups, 'vk-media':loadMedia,
+  'monitor-queries':loadMonitorQueries, 'monitor-leads':loadLeads, articles:loadArticles,
+};
+
+function go(name){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('active'));
+  document.getElementById('sec-'+name)?.classList.add('active');
+  document.querySelector(`.ni[onclick="go('${name}')"]`)?.classList.add('active');
+  document.getElementById('page-title').textContent=TITLES[name]||name;
+  if(LOAD[name])LOAD[name]();
+}
+
+// ── ДАШБОРД ──────────────────────────────────────
+async function loadDash(){
+  const{stats,scheduler}=await API('/stats');
+  const s=stats||{}, sc=scheduler||{};
+
+  document.getElementById('stats-row').innerHTML=`
+    <div class="scard s-purple"><div class="sval">${s.vk_groups_total||0}</div><div class="slbl">VK Групп</div></div>
+    <div class="scard s-green"> <div class="sval">${s.vk_groups_done||0}</div><div class="slbl">Готовых групп</div></div>
+    <div class="scard s-amber"> <div class="sval">${s.vk_accounts||0}</div><div class="slbl">Аккаунтов</div></div>
+    <div class="scard s-green"> <div class="sval">${s.monitor_leads_new||0}</div><div class="slbl">Новых лидов</div></div>
+    <div class="scard s-pink">  <div class="sval">${s.monitor_queries||0}</div><div class="slbl">Запросов монит.</div></div>
+    <div class="scard s-teal">  <div class="sval">${s.articles_published||0}</div><div class="slbl">Статей опубл.</div></div>
+    <div class="scard s-purple"><div class="sval">${s.tasks_pending||0}</div><div class="slbl">Задач в очереди</div></div>
+    <div class="scard s-red">   <div class="sval">${s.vk_groups_error||0}</div><div class="slbl">Ошибок</div></div>`;
+
+  const nc=s.monitor_leads_new||0;
+  const bd=document.getElementById('leads-badge');
+  bd.textContent=nc; bd.style.display=nc?'':'none';
+  const tc=document.getElementById('top-chip');
+  nc?(tc.textContent=nc+' новых лидов',tc.style.display=''):(tc.style.display='none');
+
+  const dot=document.getElementById('sched-dot'), lbl=document.getElementById('sched-lbl');
+  if(sc.status==='running'){
+    dot.style.background='#4ADE80'; dot.style.boxShadow='0 0 9px rgba(74,222,128,0.75)';
+    dot.style.animation='blink 2s ease-in-out infinite'; lbl.textContent='Платформа активна';
+  } else if(sc.status==='paused'){
+    dot.style.background='var(--warn)'; dot.style.animation='none'; lbl.textContent='На паузе';
+  } else {
+    dot.style.background='var(--err)'; dot.style.animation='none'; lbl.textContent='Остановлена';
+  }
+
+  document.getElementById('auto-sched').innerHTML=`
+    <div style="display:flex;flex-direction:column;gap:10px">
+      <div class="flex ac gap10"><span class="pill p-purple">Авто</span>Мониторинг комментариев — каждые 30 минут</div>
+      <div class="flex ac gap10"><span class="pill p-purple">Авто</span>Репосты из ядра VK — один раз в день</div>
+      <div class="flex ac gap10"><span class="pill p-purple">Авто</span>Лайки и комментарии — один раз в 3 дня</div>
+      <div class="divider"></div>
+      <div class="hint">Последний скан: <b>${sc.last_monitor_scan||'—'}</b>&nbsp;&nbsp;|&nbsp;&nbsp;Репост: <b>${sc.last_vk_reposts||'—'}</b></div>
+    </div>`;
+
+  const{leads}=await API('/monitor/leads?status=new&limit=5');
+  const ll=document.getElementById('dash-leads');
+  if(!leads?.length){
+    ll.innerHTML='<div class="hint" style="padding:16px 0">Лидов пока нет — добавьте запросы в раздел «Агент 2 — Запросы поиска»</div>';
+    return;
+  }
+  ll.innerHTML=leads.map(l=>`
+    <div style="padding:12px 0;border-bottom:1px solid var(--border)">
+      <div class="flex jb ac"><b style="font-size:0.94rem">${esc(l.author_name)}</b><span class="hint">${(l.found_at||'').substring(0,16)}</span></div>
+      <div style="font-size:0.88rem;color:var(--txt-2);margin:4px 0">${esc((l.text||'').substring(0,130))}...</div>
+      <div class="flex gap8 mt8">
+        ${l.post_url?`<a href="${l.post_url}" target="_blank" class="btn btn-soft btn-sm">Открыть пост</a>`:''}
+        <button class="btn btn-ghost btn-sm" onclick="mld(${l.id})">Обработан</button>
+        <span class="hint">запрос: ${esc(l.query_text)}</span>
+      </div>
+    </div>`).join('');
+}
+async function mld(id){await API('/monitor/leads/'+id+'/status','POST',{status:'processed'});loadDash();}
+
+// ── АККАУНТЫ ─────────────────────────────────────
+async function loadAccounts(){
+  const{accounts}=await API('/accounts');
+  document.getElementById('accounts-body').innerHTML=(accounts||[]).map(a=>`
+    <tr>
+      <td style="color:var(--txt-dim)">${a.id}</td>
+      <td><b>${esc(a.user_name||'—')}</b></td>
+      <td><code style="font-size:0.8rem;color:var(--txt-dim)">${a.token_hint||'?'}</code></td>
+      <td>${pill(a.status)}</td>
+      <td>${a.daily_actions||0} / 15</td>
+      <td>${a.daily_groups||0} / 2</td>
+      <td><button class="btn btn-err btn-sm" onclick="delAcc(${a.id})">Удалить</button></td>
+    </tr>`).join('')||'<tr><td colspan="7" style="text-align:center;padding:26px;color:var(--txt-dim)">Аккаунтов нет</td></tr>';
+}
+async function addAccount(){
+  const t=document.getElementById('new-token').value.trim();
+  if(!t){notify('Введите токен','warning');return;}
+  notify('Проверяем токен...','info');
+  const d=await API('/accounts/add','POST',{token:t,notes:document.getElementById('token-note').value});
+  if(d.success){notify('Добавлен: '+(d.user_info?.name||d.hint),'success');document.getElementById('new-token').value='';loadAccounts();}
+  else notify(d.error,'error');
+}
+async function delAcc(id){if(!confirm('Удалить аккаунт?'))return;await API('/accounts/'+id,'DELETE');loadAccounts();}
+async function checkAccounts(){
+  notify('Проверяем все токены...','info');
+  const d=await API('/accounts/check','POST');
+  notify('Проверено: '+(d.results?.length||0)+' аккаунтов','success');
+  loadAccounts();
+}
+
+// ── НАСТРОЙКИ ─────────────────────────────────────
+async function loadSettings(){
+  const{settings}=await API('/settings'); const s=settings||{};
+  const map={brand:'brand_name',region:'region',site:'site_url',nucleus:'nucleus_url',
+    desc:'base_description',pinned:'pinned_post_text','tg-token':'telegram_bot_token','tg-chats':'telegram_chat_ids'};
+  Object.entries(map).forEach(([k,v])=>{const e=document.getElementById('s-'+k);if(e)e.value=s[v]||'';});
+}
+async function saveSettings(){
+  await API('/settings','POST',{
+    brand_name:document.getElementById('s-brand').value,
+    region:document.getElementById('s-region').value,
+    site_url:document.getElementById('s-site').value,
+    nucleus_url:document.getElementById('s-nucleus').value,
+    base_description:document.getElementById('s-desc').value,
+    pinned_post_text:document.getElementById('s-pinned').value,
+    telegram_bot_token:document.getElementById('s-tg-token').value,
+    telegram_chat_ids:document.getElementById('s-tg-chats').value,
+  });
+  notify('Настройки сохранены','success');
+}
+
+// ── VK КЛЮЧИ ──────────────────────────────────────
+async function loadKeywords(){
+  const{keywords}=await API('/vk/keywords');
+  document.getElementById('kw-body').innerHTML=(keywords||[]).map(k=>`
+    <tr>
+      <td style="color:var(--txt-dim)">${k.id}</td>
+      <td>${esc(k.keyword)}</td>
+      <td style="color:var(--txt-dim)">${k.region||'—'}</td>
+      <td>${k.used?pill('done'):pill('pending')}</td>
+      <td class="flex gap8">
+        ${!k.used?`<button class="btn btn-soft btn-sm" onclick="createOne(${k.id},'${esc(k.keyword)}')">Создать</button>`:''}
+        <button class="btn btn-err btn-sm" onclick="delKw(${k.id})">Удалить</button>
+      </td>
+    </tr>`).join('')||'<tr><td colspan="5" style="text-align:center;padding:26px;color:var(--txt-dim)">Добавьте ключи выше</td></tr>';
+}
+async function addKeyword(){
+  const kw=document.getElementById('kw-q').value.trim();
+  if(!kw){notify('Введите ключ','warning');return;}
+  const d=await API('/vk/keywords/add','POST',{keyword:kw,region:document.getElementById('kw-r').value});
+  if(d.success){notify('Ключ добавлен','success');document.getElementById('kw-q').value='';loadKeywords();}
+  else notify(d.error,'error');
+}
+async function importKeywords(){
+  const text=document.getElementById('kw-bulk').value.trim();
+  if(!text){notify('Список пустой','warning');return;}
+  const d=await API('/vk/keywords/import','POST',{text});
+  notify('Добавлено: '+d.added+', пропущено: '+d.skipped,'success');
+  document.getElementById('kw-bulk').value=''; loadKeywords();
+}
+async function delKw(id){await API('/vk/keywords/'+id,'DELETE');loadKeywords();}
+async function createOne(id,kw){
+  if(!confirm('Создать группу для «'+kw+'»?'))return;
+  await API('/vk/groups/create-one','POST',{keyword_id:id,keyword:kw});
+  notify('Запущено. Следите в разделе Логи','success');
+}
+async function startGroups(){
+  if(!confirm('Запустить создание групп для всех незапущенных ключей?'))return;
+  const d=await API('/vk/groups/start','POST');
+  d.success?notify('Запущено: '+d.queued+' групп в очереди','success'):notify(d.error,'error');
+}
+
+// ── VK ГРУППЫ ─────────────────────────────────────
+async function loadVkGroups(){
+  const{groups}=await API('/vk/groups');
+  document.getElementById('groups-body').innerHTML=(groups||[]).map(g=>`
+    <tr>
+      <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><b>${esc(g.name||'—')}</b></td>
+      <td style="color:var(--txt-dim)">${g.vk_group_id||'—'}</td>
+      <td>${pill(g.status)}</td>
+      <td><span class="pill p-purple">${g.reposts_done||0}</span></td>
+      <td style="color:var(--txt-dim)">${(g.created_at||'').substring(0,16)}</td>
+      <td>${g.vk_group_url?`<a href="${g.vk_group_url}" target="_blank" class="btn btn-soft btn-sm">Открыть в VK</a>`:'—'}</td>
+    </tr>`).join('')||'<tr><td colspan="6" style="text-align:center;padding:26px;color:var(--txt-dim)">Групп пока нет</td></tr>';
+}
+
+// ── МЕДИА ─────────────────────────────────────────
+async function loadMedia(){
+  for(const[sub,id]of[['avatars','av-list'],['covers','cv-list'],['media','md-list']]){
+    const{files}=await API('/vk/upload/list/'+sub);
+    document.getElementById(id).textContent=files?.length?'Загружено: '+files.length+' файлов':'Файлов нет';
+  }
+}
+async function uploadMedia(input,sub){
+  for(const f of input.files){
+    const fd=new FormData(); fd.append('file',f);
+    const d=await(await fetch('/api/vk/upload/'+sub,{method:'POST',body:fd})).json();
+    d.success?notify('Загружен: '+f.name,'success'):notify(d.error,'error');
+  }
+  loadMedia();
+}
+async function runActivity(){
+  await API('/vk/activity-now','POST',{
+    likes:+document.getElementById('act-likes').value||3,
+    comments:+document.getElementById('act-comments').value||1,
+  });
+  notify('Активность запущена в фоне. Следите в разделе Логи','success');
+}
+
+// ── МОНИТОРИНГ ────────────────────────────────────
+async function loadMonitorQueries(){
+  const{queries}=await API('/monitor/queries');
+  document.getElementById('mq-body').innerHTML=(queries||[]).map(q=>`
+    <tr>
+      <td><b>${esc(q.query)}</b></td>
+      <td>${pill(q.status)}</td>
+      <td><span class="pill p-green">${q.found_total||0}</span></td>
+      <td style="color:var(--txt-dim)">${(q.last_run||'—').substring(0,16)}</td>
+      <td class="flex gap8">
+        <button class="btn btn-soft btn-sm" onclick="toggleMq(${q.id})">${q.status==='active'?'Пауза':'Возобновить'}</button>
+        <button class="btn btn-err btn-sm" onclick="delMq(${q.id})">Удалить</button>
+      </td>
+    </tr>`).join('')||'<tr><td colspan="5" style="text-align:center;padding:26px;color:var(--txt-dim)">Запросов нет</td></tr>';
+}
+async function addMonitorQuery(){
+  const q=document.getElementById('mq-q').value.trim();
+  if(!q){notify('Введите запрос','warning');return;}
+  await API('/monitor/queries/add','POST',{query:q,region:document.getElementById('mq-r').value});
+  notify('Запрос добавлен','success'); document.getElementById('mq-q').value=''; loadMonitorQueries();
+}
+async function importMonitorQueries(){
+  const t=document.getElementById('mq-bulk').value.trim(); if(!t)return;
+  const d=await API('/monitor/queries/import','POST',{text:t});
+  notify('Добавлено: '+d.added+' запросов','success');
+  document.getElementById('mq-bulk').value=''; loadMonitorQueries();
+}
+async function delMq(id){await API('/monitor/queries/'+id,'DELETE');loadMonitorQueries();}
+async function toggleMq(id){await API('/monitor/queries/'+id+'/toggle','POST');loadMonitorQueries();}
+async function runMonitorNow(){notify('Сканирование запущено. Следите в разделе Логи','info');await API('/monitor/scan-now','POST');}
+
+// ── ЛИДЫ ──────────────────────────────────────────
+let _lf='new';
+async function filterLeads(s){_lf=s; loadLeads();}
+async function loadLeads(){
+  const{leads}=await API('/monitor/leads?limit=100'+(_lf?'&status='+_lf:''));
+  const el=document.getElementById('leads-list');
+  if(!leads?.length){
+    el.innerHTML='<div class="hint" style="padding:22px 0">Лидов нет. Добавьте запросы и нажмите «Сканировать сейчас»</div>';
+    return;
+  }
+  el.innerHTML=leads.map(l=>`
+    <div class="lead-card ${l.status}">
+      <div class="l-auth">${esc(l.author_name)}${l.author_url?`<a href="${l.author_url}" target="_blank" style="font-size:0.76rem;margin-left:10px;font-weight:400">Профиль</a>`:''}</div>
+      <div class="l-text">${esc(l.text||'')}</div>
+      <div class="l-meta">
+        <span>Запрос: ${esc(l.query_text)}</span>
+        <span>Группа: ${esc(l.group_name||'VK')}</span>
+        <span>${(l.found_at||'').substring(0,16)}</span>
+        <span>${l.sent_to_telegram?'Отправлен в Telegram':'Не отправлен в Telegram'}</span>
+      </div>
+      <div class="l-act">
+        ${l.post_url?`<a href="${l.post_url}" target="_blank" class="btn btn-p btn-sm">Открыть пост</a>`:''}
+        <button class="btn btn-ok btn-sm" onclick="ml(${l.id},'processed')">Обработан</button>
+        <button class="btn btn-ghost btn-sm" onclick="ml(${l.id},'spam')">Спам</button>
+      </div>
+    </div>`).join('');
+}
+async function ml(id,s){await API('/monitor/leads/'+id+'/status','POST',{status:s});loadLeads();}
+
+// ── СТАТЬИ ────────────────────────────────────────
+const PLATS=[
+  {id:'telegra_ph', n:'Telegra.ph',   h:'Бесплатно, без регистрации'},
+  {id:'vk_articles',n:'VK Статьи',    h:'Нужен токен VK'},
+  {id:'dzen',       n:'Яндекс Дзен',  h:'Скоро'},
+  {id:'vc_ru',      n:'VC.ru',        h:'Скоро'},
+];
+let _sa=null, _sp=new Set(['telegra_ph']);
+
+async function loadArticles(){
+  const{articles}=await API('/articles');
+  document.getElementById('articles-body').innerHTML=(articles||[]).map(a=>`
+    <tr>
+      <td><b>${esc(a.title||'—')}</b></td>
+      <td>${pill(a.status)}</td>
+      <td style="color:var(--txt-dim)">${(a.created_at||'').substring(0,16)}</td>
+      <td><button class="btn btn-p btn-sm" onclick="showPub(${a.id},'${esc(a.title)}')">Опубликовать</button></td>
+    </tr>`).join('')||'<tr><td colspan="4" style="text-align:center;padding:26px;color:var(--txt-dim)">Статей нет</td></tr>';
+}
+async function addArticle(){
+  const t=document.getElementById('art-title').value.trim();
+  const c=document.getElementById('art-content').value.trim();
+  if(!t||!c){notify('Нужны заголовок и текст','warning');return;}
+  const d=await API('/articles/add','POST',{title:t,content:c,tags:document.getElementById('art-tags').value});
+  if(d.success){
+    notify('Статья сохранена','success');
+    document.getElementById('art-title').value='';
+    document.getElementById('art-content').value='';
+    loadArticles();
+  } else notify(d.error,'error');
+}
+function showPub(id,title){
+  _sa=id;
+  document.getElementById('pub-info').textContent='Статья: '+title;
+  document.getElementById('plat-grid').innerHTML=PLATS.map(p=>`
+    <label class="plat-item ${_sp.has(p.id)?'sel':''}">
+      <input type="checkbox" value="${p.id}" ${_sp.has(p.id)?'checked':''} onchange="tp('${p.id}',this.checked)">
+      ${p.n}<br><span class="hint">${p.h}</span>
+    </label>`).join('');
+  document.getElementById('pub-panel').style.display='block';
+  document.getElementById('pub-panel').scrollIntoView({behavior:'smooth'});
+}
+function tp(id,c){
+  c?_sp.add(id):_sp.delete(id);
+  document.querySelectorAll('.plat-item').forEach(el=>{
+    const cb=el.querySelector('input');
+    el.classList.toggle('sel',cb&&_sp.has(cb.value));
+  });
+}
+async function publishArticle(){
+  if(!_sa){notify('Выберите статью','warning');return;}
+  const p=[..._sp]; if(!p.length){notify('Выберите платформы','warning');return;}
+  const d=await API('/articles/'+_sa+'/publish','POST',{platforms:p});
+  d.success?notify(d.message,'success'):notify(d.error,'error');
+  setTimeout(loadArticles,2000);
+}
+
+// ── ЛОГИ ──────────────────────────────────────────
+let _al=false, _alt=null;
+async function loadLogs(){
+  const ag=document.getElementById('log-filter')?.value||'';
+  const{logs}=await API('/logs?limit=150'+(ag?'&agent='+ag:''));
+  const b=document.getElementById('logbox');
+  if(!logs?.length){b.textContent='Логов пока нет';return;}
+  b.innerHTML=logs.map(l=>`
+    <div class="ll">
+      <span class="lt">${(l.created_at||'').substring(0,19)}</span>
+      <span class="lv lv${l.level}">${l.level}</span>
+      <span class="la">[${l.agent||'?'}]</span>
+      <span class="lm">${esc(l.message||'')}</span>
+    </div>`).join('');
+  b.scrollTop=b.scrollHeight;
+}
+function toggleAutoLog(){
+  _al=!_al;
+  const btn=document.getElementById('auto-log-btn');
+  if(_al){
+    btn.textContent='Остановить авто';
+    btn.style.background='var(--ok-bg)'; btn.style.color='var(--ok)';
+    const t=()=>{loadLogs();_alt=setTimeout(t,4000);}; t();
+  } else {
+    btn.textContent='Авто-обновление';
+    btn.style.background=''; btn.style.color='';
+    clearTimeout(_alt);
+  }
+}
+
+// ── ЧАСЫ + АВТО-РЕФРЕШ ───────────────────────────
+setInterval(()=>{
+  document.getElementById('clock').textContent=
+    new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
+},1000);
+setInterval(()=>{
+  if(document.getElementById('sec-dashboard').classList.contains('active'))loadDash();
+},30000);
+
+loadDash();
+
+// ── МОБИЛЬНОЕ МЕНЮ ────────────────────────────
+function toggleSidebar(){
+  const s=document.querySelector('.sidebar');
+  const o=document.getElementById('overlay');
+  const b=document.getElementById('burger');
+  const open=s.classList.toggle('open');
+  b.classList.toggle('open',open);
+  o.classList.toggle('visible',open);
+  document.body.style.overflow=open?'hidden':'';
+}
+function closeSidebar(){
+  document.querySelector('.sidebar').classList.remove('open');
+  document.getElementById('overlay').classList.remove('visible');
+  document.getElementById('burger').classList.remove('open');
+  document.body.style.overflow='';
+}
+// Закрывать при выборе пункта меню на мобиле
+document.querySelectorAll('.ni').forEach(n=>{
+  n.addEventListener('click',()=>{ if(window.innerWidth<=900)closeSidebar(); });
+});
+// Закрывать при свайпе влево по оверлею
+let _tx=0;
+document.querySelector('.sidebar').addEventListener('touchstart',e=>_tx=e.touches[0].clientX,{passive:true});
+document.querySelector('.sidebar').addEventListener('touchend',e=>{
+  if(_tx - e.changedTouches[0].clientX > 60) closeSidebar();
+},{passive:true});
+</script>
+
+<!-- ══════════════ НИЖНЯЯ НАВИГАЦИЯ ══════════════ -->
+<nav class="bottom-nav">
+  <div class="bn-item active" id="bn-dashboard" onclick="go('dashboard');bnActive('bn-dashboard')">
+    <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></svg>
+    <span>Дашборд</span>
+  </div>
+  <div class="bn-item" id="bn-monitor-leads" onclick="go('monitor-leads');bnActive('bn-monitor-leads')">
+    <svg viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+    <span>Лиды</span>
+  </div>
+  <div class="bn-item" id="bn-monitor-queries" onclick="go('monitor-queries');bnActive('bn-monitor-queries')">
+    <svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+    <span>Поиск</span>
+  </div>
+  <div class="bn-item" id="bn-vk-groups" onclick="go('vk-groups');bnActive('bn-vk-groups')">
+    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span>Группы</span>
+  </div>
+  <div class="bn-item" id="bn-settings" onclick="go('settings');bnActive('bn-settings')">
+    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+    <span>Настройки</span>
+  </div>
+</nav>
+
+<script>
+function bnActive(id){
+  document.querySelectorAll('.bn-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById(id)?.classList.add('active');
+}
+</script>
+</body>
+</html>
