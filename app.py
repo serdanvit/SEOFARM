@@ -1,418 +1,760 @@
 """
-app.py — Главный сервер SEO FARM платформы
-Запуск: python app.py
-Панель: http://localhost:5000
+app.py — SEO FARM Flask сервер
+Все эндпоинты которые вызывает фронтенд.
 """
-import os, sys, json, logging, threading, sqlite3
-from flask import Flask, request, jsonify, send_from_directory
+import os, sys, json, logging, threading, webbrowser
+from datetime import datetime
+
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from core.config import FLASK_HOST, FLASK_PORT, LOG_FILE, LOGS_DIR, DATA_DIR, UPLOADS_DIR
-from core.database import (get_conn, db_log, init_all_tables, get_logs,
-                            get_platform_stats, get_setting, set_setting, get_all_settings)
-from core.token_manager import add_vk_account, get_all_accounts
-import core.scheduler as scheduler
+from core.db import init_schema, fetchone, fetchall, execute
+from core.database import db_log, get_setting, set_setting, get_all_settings, get_platform_stats, get_logs
 
+# ── Логи ──────────────────────────────────────────────────────
 os.makedirs(LOGS_DIR, exist_ok=True)
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(UPLOADS_DIR, exist_ok=True)
+for sub in ("avatars", "covers", "media"):
+    os.makedirs(os.path.join(UPLOADS_DIR, sub), exist_ok=True)
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
     handlers=[
         logging.FileHandler(LOG_FILE, encoding="utf-8"),
-        logging.StreamHandler(sys.stdout)
-    ]
+        logging.StreamHandler(sys.stdout),
+    ],
 )
 logger = logging.getLogger("app")
 
-app = Flask(__name__, static_folder="static", static_url_path="/static")
+# ── Flask ──────────────────────────────────────────────────────
+app = Flask(__name__, static_folder="static", static_url_path="")
 CORS(app)
 
-# ── ГЛАВНАЯ ──────────────────────────────────────────────────
+# ── Старт ─────────────────────────────────────────────────────
+init_schema()
+from core import scheduler
+scheduler.start()
+logger.info("SEO FARM запущен")
+
+
+# ─────────────────────────────────────────────────────────────
+# FRONTEND
+# ─────────────────────────────────────────────────────────────
 @app.route("/")
 def index():
     return send_from_directory("static", "index.html")
 
-# ── ПЛАТФОРМА ────────────────────────────────────────────────
+
+# ─────────────────────────────────────────────────────────────
+# СТАТИСТИКА
+# ─────────────────────────────────────────────────────────────
 @app.route("/api/stats")
 def api_stats():
-    return jsonify({"success": True, "stats": get_platform_stats(),
-                    "scheduler": scheduler.status()})
+    return jsonify(get_platform_stats())
 
-@app.route("/api/logs")
-def api_logs():
-    limit = request.args.get("limit", 150, type=int)
-    agent = request.args.get("agent", None)
-    return jsonify({"success": True, "logs": get_logs(limit, agent)})
 
+# ─────────────────────────────────────────────────────────────
+# НАСТРОЙКИ
+# ─────────────────────────────────────────────────────────────
 @app.route("/api/settings", methods=["GET"])
-def api_get_settings():
-    return jsonify({"success": True, "settings": get_all_settings()})
+def api_settings_get():
+    return jsonify(get_all_settings())
 
 @app.route("/api/settings", methods=["POST"])
-def api_save_settings():
+def api_settings_save():
     data = request.json or {}
     for k, v in data.items():
-        set_setting(k, v)
+        set_setting(str(k), str(v))
     db_log("INFO", "app", "Настройки сохранены")
     return jsonify({"success": True})
 
-# ── ПЛАНИРОВЩИК ──────────────────────────────────────────────
-@app.route("/api/scheduler/start",  methods=["POST"])
-def sched_start():  return jsonify(scheduler.start())
 
-@app.route("/api/scheduler/stop",   methods=["POST"])
-def sched_stop():   return jsonify(scheduler.stop())
-
-@app.route("/api/scheduler/pause",  methods=["POST"])
-def sched_pause():  return jsonify(scheduler.pause())
-
-@app.route("/api/scheduler/resume", methods=["POST"])
-def sched_resume(): return jsonify(scheduler.resume())
-
-@app.route("/api/scheduler/status")
-def sched_status(): return jsonify(scheduler.status())
-
-# ── АККАУНТЫ VK (общие для всех агентов) ─────────────────────
+# ─────────────────────────────────────────────────────────────
+# АККАУНТЫ VK
+# ─────────────────────────────────────────────────────────────
 @app.route("/api/accounts")
 def api_accounts():
-    return jsonify({"success": True, "accounts": get_all_accounts()})
+    from core.token_manager import get_all_accounts
+    return jsonify(get_all_accounts())
 
 @app.route("/api/accounts/add", methods=["POST"])
-def api_add_account():
-    data = request.json or {}
-    token = (data.get("token") or "").strip()
+def api_accounts_add():
+    data  = request.json or {}
+    token = data.get("token", "").strip()
     if not token:
-        return jsonify({"success": False, "error": "Токен не указан"})
-    result = add_vk_account(token, data.get("notes",""))
-    return jsonify(result)
+        return jsonify({"success": False, "error": "Токен пустой"})
+    from core.token_manager import add_vk_account
+    return jsonify(add_vk_account(token, notes=data.get("notes", "")))
 
 @app.route("/api/accounts/<int:aid>", methods=["DELETE"])
-def api_del_account(aid):
-    conn = get_conn()
-    conn.execute("DELETE FROM vk_accounts WHERE id=?", (aid,))
-    conn.commit(); conn.close()
+def api_accounts_delete(aid):
+    execute("DELETE FROM vk_accounts WHERE id=?", (aid,))
     return jsonify({"success": True})
+
+@app.route("/api/accounts/<int:aid>/toggle", methods=["POST"])
+def api_accounts_toggle(aid):
+    row = fetchone("SELECT status FROM vk_accounts WHERE id=?", (aid,))
+    if not row:
+        return jsonify({"success": False, "error": "Не найден"})
+    new = "inactive" if row["status"] == "active" else "active"
+    execute("UPDATE vk_accounts SET status=? WHERE id=?", (new, aid))
+    return jsonify({"success": True, "status": new})
 
 @app.route("/api/accounts/check", methods=["POST"])
-def api_check_accounts():
+def api_accounts_check():
     from core.vk_api import check_token
     from core.token_manager import decrypt_token
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("SELECT * FROM vk_accounts")
-    accounts = [dict(r) for r in c.fetchall()]
-    conn.close()
-    results = []
+    accounts = fetchall("SELECT id, token_encrypted FROM vk_accounts WHERE status='active'")
+    results  = []
     for acc in accounts:
-        token = decrypt_token(acc["token_encrypted"])
-        valid, info = check_token(token)
-        status = "active" if valid else "invalid"
-        conn = get_conn()
-        conn.execute("UPDATE vk_accounts SET status=? WHERE id=?", (status, acc["id"]))
-        conn.commit(); conn.close()
-        results.append({"id": acc["id"], "hint": acc["token_hint"],
-                        "valid": valid, "status": status, "info": info})
-    return jsonify({"success": True, "results": results})
+        tok   = decrypt_token(acc["token_encrypted"])
+        valid, info = check_token(tok)
+        execute("UPDATE vk_accounts SET status=? WHERE id=?",
+                ("active" if valid else "error", acc["id"]))
+        results.append({"id": acc["id"], "valid": valid, "info": info})
+    return jsonify({"results": results})
 
-# ════════════════════════════════════════════════════════════
-# АГЕНТ 1 — VK ГРУППЫ
-# ════════════════════════════════════════════════════════════
 
+# ─────────────────────────────────────────────────────────────
+# VK КЛЮЧЕВЫЕ СЛОВА
+# ─────────────────────────────────────────────────────────────
 @app.route("/api/vk/keywords")
-def vk_keywords():
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("SELECT * FROM vk_keywords ORDER BY id")
-    rows = [dict(r) for r in c.fetchall()]
-    conn.close()
-    return jsonify({"success": True, "keywords": rows})
+def api_vk_keywords():
+    rows = fetchall("SELECT * FROM vk_keywords ORDER BY id DESC")
+    return jsonify([dict(r) for r in rows])
 
 @app.route("/api/vk/keywords/add", methods=["POST"])
-def vk_add_keyword():
+def api_vk_keywords_add():
     data = request.json or {}
-    kw = (data.get("keyword") or "").strip()
-    if not kw:
-        return jsonify({"success": False, "error": "Пустой ключ"})
-    conn = get_conn()
-    try:
-        conn.execute("INSERT INTO vk_keywords (keyword, region) VALUES (?,?)",
-                     (kw, data.get("region","")))
-        conn.commit(); conn.close()
-        return jsonify({"success": True})
-    except sqlite3.IntegrityError:
-        conn.close()
-        return jsonify({"success": False, "error": f"Ключ '{kw}' уже есть"})
+    text = data.get("keywords", "").strip()
+    if not text:
+        return jsonify({"success": False, "error": "Пустой список"})
+    keywords = [k.strip() for k in text.replace("\n", ",").split(",") if k.strip()]
+    region   = data.get("region", "")
+    added = 0
+    for kw in keywords:
+        try:
+            execute("INSERT INTO vk_keywords(keyword,region) VALUES(?,?)", (kw, region))
+            added += 1
+        except Exception:
+            pass
+    return jsonify({"success": True, "added": added})
 
 @app.route("/api/vk/keywords/import", methods=["POST"])
-def vk_import_keywords():
-    data = request.json or {}
-    text = data.get("text","")
-    kws  = [l.strip() for l in text.split("\n") if l.strip()]
-    conn = get_conn()
-    added = skipped = 0
-    for kw in kws:
+def api_vk_keywords_import():
+    """Импорт ключей из загруженного текстового файла или CSV"""
+    if "file" in request.files:
+        f    = request.files["file"]
+        text = f.read().decode("utf-8", errors="ignore")
+    else:
+        text = (request.json or {}).get("text", "")
+
+    region   = (request.json or request.form or {}).get("region", "")
+    keywords = [k.strip() for k in text.replace("\n", ",").replace(";", ",").split(",")
+                if k.strip() and len(k.strip()) > 2]
+    added = 0
+    for kw in keywords:
         try:
-            conn.execute("INSERT INTO vk_keywords (keyword) VALUES (?)", (kw,))
+            execute("INSERT INTO vk_keywords(keyword,region) VALUES(?,?)", (kw, region))
             added += 1
-        except sqlite3.IntegrityError:
-            skipped += 1
-    conn.commit(); conn.close()
-    return jsonify({"success": True, "added": added, "skipped": skipped})
+        except Exception:
+            pass
+    return jsonify({"success": True, "added": added, "total": len(keywords)})
 
 @app.route("/api/vk/keywords/<int:kid>", methods=["DELETE"])
-def vk_del_keyword(kid):
-    conn = get_conn()
-    conn.execute("DELETE FROM vk_keywords WHERE id=?", (kid,))
-    conn.commit(); conn.close()
+def api_vk_keywords_delete(kid):
+    execute("DELETE FROM vk_keywords WHERE id=?", (kid,))
     return jsonify({"success": True})
 
+
+# ─────────────────────────────────────────────────────────────
+# VK ГРУППЫ — создание
+# ─────────────────────────────────────────────────────────────
 @app.route("/api/vk/groups")
-def vk_groups():
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("SELECT * FROM vk_groups ORDER BY created_at DESC")
-    rows = [dict(r) for r in c.fetchall()]
-    conn.close()
-    return jsonify({"success": True, "groups": rows})
+def api_vk_groups():
+    rows = fetchall("SELECT * FROM vk_groups ORDER BY created_at DESC LIMIT 200")
+    return jsonify([dict(r) for r in rows])
 
 @app.route("/api/vk/groups/start", methods=["POST"])
-def vk_start_groups():
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("SELECT * FROM vk_keywords WHERE used=0")
-    unused = [dict(r) for r in c.fetchall()]
-    conn.close()
-    if not unused:
-        return jsonify({"success": False, "error": "Нет неиспользованных ключей"})
+@app.route("/api/vk/create-now",   methods=["POST"])
+def api_vk_create_now():
+    """Запуск пакетного создания групп по свободным ключам"""
+    data     = request.json or {}
+    count    = int(data.get("count", 1))
+    kw_ids   = data.get("keyword_ids", [])
+
+    if kw_ids:
+        keywords = []
+        for kid in kw_ids[:count]:
+            row = fetchone("SELECT id,keyword FROM vk_keywords WHERE id=? AND used=0", (kid,))
+            if row:
+                keywords.append(row)
+    else:
+        keywords = fetchall(
+            "SELECT id,keyword FROM vk_keywords WHERE used=0 LIMIT ?", (count,)
+        )
+
+    if not keywords:
+        return jsonify({"success": False, "error": "Нет свободных ключевых слов"})
+
     def run():
-        import time
         from agents.vk_groups.creator import create_group_pipeline
-        for kw in unused:
+        for kw in keywords:
             create_group_pipeline(kw["id"], kw["keyword"])
-            time.sleep(120 + (hash(kw["keyword"]) % 60))
+
     threading.Thread(target=run, daemon=True).start()
-    return jsonify({"success": True, "queued": len(unused)})
+    return jsonify({"success": True, "started": len(keywords),
+                    "keywords": [k["keyword"] for k in keywords]})
 
 @app.route("/api/vk/groups/create-one", methods=["POST"])
-def vk_create_one():
+def api_vk_create_one():
+    """Создать одну группу по конкретному ключу"""
     data = request.json or {}
-    kid = data.get("keyword_id")
-    kw  = data.get("keyword","").strip()
-    if not kw:
-        return jsonify({"success": False, "error": "Нет ключа"})
+    keyword    = data.get("keyword", "").strip()
+    keyword_id = data.get("keyword_id")
+
+    if not keyword:
+        return jsonify({"success": False, "error": "Ключевое слово пустое"})
+
     def run():
         from agents.vk_groups.creator import create_group_pipeline
-        create_group_pipeline(kid, kw)
+        create_group_pipeline(keyword_id, keyword)
+
+    threading.Thread(target=run, daemon=True).start()
+    return jsonify({"success": True, "keyword": keyword})
+
+
+# ─────────────────────────────────────────────────────────────
+# VK ГРУППЫ — репосты и активность
+# ─────────────────────────────────────────────────────────────
+@app.route("/api/vk/reposts-now", methods=["POST"])
+def api_vk_reposts_now():
+    def run():
+        from agents.vk_groups.repost import repost_to_all_groups
+        repost_to_all_groups()
     threading.Thread(target=run, daemon=True).start()
     return jsonify({"success": True})
 
-@app.route("/api/vk/reposts-now", methods=["POST"])
-def vk_reposts_now():
-    return jsonify(scheduler.run_vk_reposts_now())
-
 @app.route("/api/vk/activity-now", methods=["POST"])
-def vk_activity_now():
-    data = request.json or {}
-    return jsonify(scheduler.run_vk_activity_now(
-        data.get("likes", 3), data.get("comments", 1)
-    ))
-
-@app.route("/api/vk/preview-name", methods=["POST"])
-def vk_preview_name():
-    from agents.vk_groups.content_gen import generate_name
-    data = request.json or {}
-    return jsonify({"name": generate_name(
-        data.get("keyword",""), data.get("brand",""), data.get("region","")
-    )})
-
-# Загрузка медиа
-@app.route("/api/vk/upload/<subfolder>", methods=["POST"])
-def vk_upload(subfolder):
-    if subfolder not in ("avatars","covers","media"):
-        return jsonify({"success": False, "error": "Неверная папка"})
-    if "file" not in request.files:
-        return jsonify({"success": False, "error": "Нет файла"})
-    f = request.files["file"]
-    from werkzeug.utils import secure_filename
-    fname = secure_filename(f.filename)
-    folder = os.path.join(UPLOADS_DIR, subfolder)
-    os.makedirs(folder, exist_ok=True)
-    f.save(os.path.join(folder, fname))
-    return jsonify({"success": True, "filename": fname})
-
-@app.route("/api/vk/upload/list/<subfolder>")
-def vk_upload_list(subfolder):
-    import glob
-    folder = os.path.join(UPLOADS_DIR, subfolder)
-    if not os.path.exists(folder):
-        return jsonify({"files": []})
-    files = []
-    for ext in ["*.jpg","*.jpeg","*.png","*.mp4","*.mov"]:
-        files += [os.path.basename(x) for x in glob.glob(os.path.join(folder, ext))]
-    return jsonify({"files": files})
-
-# ════════════════════════════════════════════════════════════
-# АГЕНТ 2 — МОНИТОРИНГ КОММЕНТАРИЕВ
-# ════════════════════════════════════════════════════════════
-
-@app.route("/api/monitor/queries")
-def monitor_queries():
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("SELECT * FROM monitor_queries ORDER BY id")
-    rows = [dict(r) for r in c.fetchall()]
-    conn.close()
-    return jsonify({"success": True, "queries": rows})
-
-@app.route("/api/monitor/queries/add", methods=["POST"])
-def monitor_add_query():
-    data = request.json or {}
-    q = (data.get("query") or "").strip()
-    if not q:
-        return jsonify({"success": False, "error": "Пустой запрос"})
-    conn = get_conn()
-    conn.execute("INSERT INTO monitor_queries (query, source, region) VALUES (?,?,?)",
-                 (q, data.get("source","vk"), data.get("region","")))
-    conn.commit(); conn.close()
-    db_log("INFO", "monitor", f"Добавлен запрос мониторинга: «{q}»")
+def api_vk_activity_now():
+    def run():
+        from agents.vk_groups.activity import run_activity_all
+        run_activity_all()
+    threading.Thread(target=run, daemon=True).start()
     return jsonify({"success": True})
 
+
+# ─────────────────────────────────────────────────────────────
+# VK МЕДИА — загрузка файлов (аватары, обложки, медиа)
+# ─────────────────────────────────────────────────────────────
+ALLOWED_EXTS = {
+    "avatars": {".jpg", ".jpeg", ".png"},
+    "covers":  {".jpg", ".jpeg", ".png"},
+    "media":   {".jpg", ".jpeg", ".png", ".mp4", ".mov"},
+}
+
+@app.route("/api/vk/upload/<sub>", methods=["POST"])
+def api_vk_upload(sub):
+    if sub not in ALLOWED_EXTS:
+        return jsonify({"success": False, "error": "Неверная категория"})
+
+    files   = request.files.getlist("files") or request.files.getlist("file")
+    if not files:
+        return jsonify({"success": False, "error": "Файлы не выбраны"})
+
+    folder  = os.path.join(UPLOADS_DIR, sub)
+    os.makedirs(folder, exist_ok=True)
+    saved   = []
+    errors  = []
+
+    for f in files:
+        if not f.filename:
+            continue
+        ext = os.path.splitext(f.filename)[1].lower()
+        if ext not in ALLOWED_EXTS[sub]:
+            errors.append(f"{f.filename}: неверный формат")
+            continue
+        # Безопасное имя файла
+        safe = f"{int(datetime.now().timestamp())}_{os.path.basename(f.filename)}"
+        safe = "".join(c for c in safe if c.isalnum() or c in "._-")
+        path = os.path.join(folder, safe)
+        f.save(path)
+        saved.append(safe)
+
+    return jsonify({
+        "success": len(saved) > 0,
+        "saved": saved,
+        "errors": errors,
+        "count": len(saved),
+    })
+
+@app.route("/api/vk/upload/list/<sub>")
+def api_vk_upload_list(sub):
+    if sub not in ALLOWED_EXTS:
+        return jsonify({"files": []})
+    folder = os.path.join(UPLOADS_DIR, sub)
+    os.makedirs(folder, exist_ok=True)
+    files  = []
+    for fname in sorted(os.listdir(folder)):
+        ext = os.path.splitext(fname)[1].lower()
+        if ext in ALLOWED_EXTS.get(sub, set()):
+            files.append(fname)
+    return jsonify({"files": files, "count": len(files)})
+
+@app.route("/api/vk/upload/delete/<sub>/<filename>", methods=["DELETE"])
+def api_vk_upload_delete(sub, filename):
+    if sub not in ALLOWED_EXTS:
+        return jsonify({"success": False})
+    # Защита от path traversal
+    safe = os.path.basename(filename)
+    path = os.path.join(UPLOADS_DIR, sub, safe)
+    if os.path.exists(path):
+        os.remove(path)
+    return jsonify({"success": True})
+
+
+# ─────────────────────────────────────────────────────────────
+# МОНИТОРИНГ (Агент 2)
+# ─────────────────────────────────────────────────────────────
+@app.route("/api/monitor/queries")
+def api_monitor_queries():
+    rows = fetchall("SELECT * FROM monitor_queries ORDER BY id DESC")
+    return jsonify([dict(r) for r in rows])
+
+@app.route("/api/monitor/queries/add", methods=["POST"])
+def api_monitor_queries_add():
+    data  = request.json or {}
+    query = data.get("query", "").strip()
+    if not query:
+        return jsonify({"success": False, "error": "Запрос пустой"})
+    qid = execute("INSERT INTO monitor_queries(query,source,region) VALUES(?,?,?)",
+                  (query, data.get("source", "vk"), data.get("region", "")))
+    return jsonify({"success": True, "id": qid})
+
 @app.route("/api/monitor/queries/import", methods=["POST"])
-def monitor_import_queries():
-    data = request.json or {}
-    text = data.get("text","")
-    qs = [l.strip() for l in text.split("\n") if l.strip()]
-    conn = get_conn()
+def api_monitor_queries_import():
+    if "file" in request.files:
+        text = request.files["file"].read().decode("utf-8", errors="ignore")
+    else:
+        text = (request.json or {}).get("text", "")
+
+    queries = [q.strip() for q in text.replace("\n", ",").split(",")
+               if q.strip() and len(q.strip()) > 2]
     added = 0
-    for q in qs:
-        conn.execute("INSERT INTO monitor_queries (query) VALUES (?)", (q,))
-        added += 1
-    conn.commit(); conn.close()
+    for q in queries:
+        try:
+            execute("INSERT INTO monitor_queries(query,source) VALUES(?,'vk')", (q,))
+            added += 1
+        except Exception:
+            pass
     return jsonify({"success": True, "added": added})
 
 @app.route("/api/monitor/queries/<int:qid>", methods=["DELETE"])
-def monitor_del_query(qid):
-    conn = get_conn()
-    conn.execute("DELETE FROM monitor_queries WHERE id=?", (qid,))
-    conn.commit(); conn.close()
+def api_monitor_queries_delete(qid):
+    execute("DELETE FROM monitor_queries WHERE id=?", (qid,))
     return jsonify({"success": True})
 
-@app.route("/api/monitor/queries/<int:qid>/toggle", methods=["POST"])
-def monitor_toggle_query(qid):
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("SELECT status FROM monitor_queries WHERE id=?", (qid,))
-    row = c.fetchone()
-    new_status = "paused" if row and row["status"]=="active" else "active"
-    conn.execute("UPDATE monitor_queries SET status=? WHERE id=?", (new_status, qid))
-    conn.commit(); conn.close()
-    return jsonify({"success": True, "status": new_status})
-
 @app.route("/api/monitor/leads")
-def monitor_leads():
-    status = request.args.get("status", None)
-    limit  = request.args.get("limit", 100, type=int)
-    conn = get_conn()
-    c = conn.cursor()
+def api_monitor_leads():
+    status = request.args.get("status", "")
+    limit  = int(request.args.get("limit", 100))
     if status:
-        c.execute("SELECT * FROM monitor_leads WHERE status=? ORDER BY found_at DESC LIMIT ?",
-                  (status, limit))
+        rows = fetchall(
+            "SELECT * FROM monitor_leads WHERE status=? ORDER BY found_at DESC LIMIT ?",
+            (status, limit)
+        )
     else:
-        c.execute("SELECT * FROM monitor_leads ORDER BY found_at DESC LIMIT ?", (limit,))
-    rows = [dict(r) for r in c.fetchall()]
-    conn.close()
-    return jsonify({"success": True, "leads": rows})
+        rows = fetchall("SELECT * FROM monitor_leads ORDER BY found_at DESC LIMIT ?", (limit,))
+    return jsonify([dict(r) for r in rows])
 
 @app.route("/api/monitor/leads/<int:lid>/status", methods=["POST"])
-def monitor_lead_status(lid):
-    data = request.json or {}
-    new_status = data.get("status", "processed")
-    note = data.get("note", "")
-    conn = get_conn()
-    conn.execute("UPDATE monitor_leads SET status=?, manager_note=? WHERE id=?",
-                 (new_status, note, lid))
-    conn.commit(); conn.close()
+def api_monitor_lead_status(lid):
+    new_status = (request.json or {}).get("status", "")
+    if new_status:
+        execute("UPDATE monitor_leads SET status=? WHERE id=?", (new_status, lid))
+    return jsonify({"success": True})
+
+@app.route("/api/monitor/leads/<int:lid>", methods=["DELETE"])
+def api_monitor_lead_delete(lid):
+    execute("DELETE FROM monitor_leads WHERE id=?", (lid,))
     return jsonify({"success": True})
 
 @app.route("/api/monitor/scan-now", methods=["POST"])
-def monitor_scan_now():
-    return jsonify(scheduler.run_monitor_now())
+def api_monitor_scan_now():
+    def run():
+        from agents.comment_monitor.monitor import run_full_scan
+        run_full_scan()
+    threading.Thread(target=run, daemon=True).start()
+    return jsonify({"success": True})
 
-# ════════════════════════════════════════════════════════════
-# АГЕНТ 3 — СТАТЬИ
-# ════════════════════════════════════════════════════════════
 
+# ─────────────────────────────────────────────────────────────
+# СТАТЬИ (Агент 3)
+# ─────────────────────────────────────────────────────────────
 @app.route("/api/articles")
 def api_articles():
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("SELECT id,title,status,created_at FROM articles ORDER BY created_at DESC")
-    rows = [dict(r) for r in c.fetchall()]
-    conn.close()
-    return jsonify({"success": True, "articles": rows})
+    from agents.article_publisher.publisher import get_articles
+    rows = get_articles()
+    return jsonify({"articles": [dict(r) for r in rows]})
 
 @app.route("/api/articles/add", methods=["POST"])
-def api_add_article():
-    data = request.json or {}
-    title   = (data.get("title") or "").strip()
-    content = (data.get("content") or "").strip()
-    tags    = data.get("tags","")
-    if not title or not content:
-        return jsonify({"success": False, "error": "Нужны заголовок и текст"})
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("INSERT INTO articles (title,content,tags,status) VALUES (?,?,?,'draft')",
-              (title, content, tags))
-    aid = c.lastrowid
-    conn.commit(); conn.close()
-    db_log("INFO","articles", f"Добавлена статья: {title}")
-    return jsonify({"success": True, "article_id": aid})
+def api_articles_add():
+    data  = request.json or {}
+    title = data.get("title", "").strip()
+    body  = data.get("content", data.get("body", "")).strip()
+    if not title or not body:
+        return jsonify({"success": False, "error": "Заголовок и текст обязательны"})
+    from agents.article_publisher.publisher import create_article
+    aid = create_article(title, body, data.get("tags", ""))
+    return jsonify({"success": True, "id": aid})
 
 @app.route("/api/articles/<int:aid>")
-def api_get_article(aid):
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("SELECT * FROM articles WHERE id=?", (aid,))
-    row = c.fetchone()
-    conn.close()
-    return jsonify({"success": True, "article": dict(row) if row else None})
+def api_articles_get(aid):
+    row = fetchone("SELECT * FROM articles WHERE id=?", (aid,))
+    if not row:
+        return jsonify({"success": False, "error": "Не найдена"})
+    pubs = fetchall("SELECT * FROM article_publications WHERE article_id=?", (aid,))
+    return jsonify({"article": dict(row), "publications": [dict(p) for p in pubs]})
+
+@app.route("/api/articles/<int:aid>", methods=["DELETE"])
+def api_articles_delete(aid):
+    from agents.article_publisher.publisher import delete_article
+    delete_article(aid)
+    return jsonify({"success": True})
 
 @app.route("/api/articles/<int:aid>/publish", methods=["POST"])
-def api_publish_article(aid):
-    data = request.json or {}
-    platforms = data.get("platforms", [])
+def api_articles_publish(aid):
+    data      = request.json or {}
+    platforms = data.get("platforms", ["telegra_ph"])
     if not platforms:
-        return jsonify({"success": False, "error": "Выбери хотя бы одну платформу"})
+        return jsonify({"success": False, "error": "Не выбрана ни одна платформа"})
+
     def run():
         from agents.article_publisher.publisher import publish_to_platforms
         publish_to_platforms(aid, platforms)
+
     threading.Thread(target=run, daemon=True).start()
-    return jsonify({"success": True, "message": f"Публикация на {len(platforms)} платформах запущена"})
+    return jsonify({"success": True, "platforms": platforms})
 
-@app.route("/api/articles/publications")
-def api_publications():
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("""SELECT p.*, a.title as article_title
-                 FROM article_publications p
-                 JOIN articles a ON a.id = p.article_id
-                 ORDER BY p.published_at DESC LIMIT 100""")
-    rows = [dict(r) for r in c.fetchall()]
-    conn.close()
-    return jsonify({"success": True, "publications": rows})
 
-# ── ЗАПУСК ────────────────────────────────────────────────────
-if __name__ == "__main__":
-    print("=" * 60)
-    print("  🌱 SEO FARM — Мультиагентная платформа")
-    print("=" * 60)
-    init_all_tables()
+# ─────────────────────────────────────────────────────────────
+# ЗАДАЧИ
+# ─────────────────────────────────────────────────────────────
+@app.route("/api/tasks")
+def api_tasks():
+    status = request.args.get("status", "")
+    limit  = int(request.args.get("limit", 50))
+    if status:
+        rows = fetchall(
+            "SELECT * FROM tasks WHERE status=? ORDER BY created_at DESC LIMIT ?",
+            (status, limit)
+        )
+    else:
+        rows = fetchall("SELECT * FROM tasks ORDER BY created_at DESC LIMIT ?", (limit,))
+    return jsonify([dict(r) for r in rows])
+
+@app.route("/api/tasks/<int:tid>/retry", methods=["POST"])
+def api_tasks_retry(tid):
+    execute("UPDATE tasks SET status='pending', attempts=0, error_message='' WHERE id=?", (tid,))
+    return jsonify({"success": True})
+
+@app.route("/api/tasks/<int:tid>", methods=["DELETE"])
+def api_tasks_delete(tid):
+    execute("DELETE FROM tasks WHERE id=?", (tid,))
+    return jsonify({"success": True})
+
+
+# ─────────────────────────────────────────────────────────────
+# ЛОГИ
+# ─────────────────────────────────────────────────────────────
+@app.route("/api/logs")
+def api_logs():
+    agent = request.args.get("agent", "")
+    limit = int(request.args.get("limit", 200))
+    rows  = get_logs(limit=limit, agent=agent or None)
+    return jsonify([dict(r) for r in rows])
+
+@app.route("/api/logs/clear", methods=["POST"])
+def api_logs_clear():
+    execute("DELETE FROM logs WHERE created_at < datetime('now', '-7 days')")
+    return jsonify({"success": True})
+
+
+# ─────────────────────────────────────────────────────────────
+# ПЛАНИРОВЩИК
+# ─────────────────────────────────────────────────────────────
+@app.route("/api/scheduler/status")
+def api_scheduler_status():
+    return jsonify({"running": scheduler.is_running()})
+
+# Поддерживаем оба варианта: toggle и отдельные start/stop/pause/resume
+@app.route("/api/scheduler/toggle",  methods=["POST"])
+@app.route("/api/scheduler/start",   methods=["POST"])
+@app.route("/api/scheduler/resume",  methods=["POST"])
+def api_scheduler_start():
     scheduler.start()
-    print(f"  📱 Панель: http://localhost:{FLASK_PORT}")
-    print(f"  📋 Консоль: python console.py")
-    print("=" * 60)
-    app.run(host=FLASK_HOST, port=FLASK_PORT, debug=False, use_reloader=False)
+    return jsonify({"running": True})
+
+@app.route("/api/scheduler/stop",    methods=["POST"])
+@app.route("/api/scheduler/pause",   methods=["POST"])
+def api_scheduler_stop():
+    scheduler.stop()
+    return jsonify({"running": False})
+
+
+# ─────────────────────────────────────────────────────────────
+# СТАРТ
+# ─────────────────────────────────────────────────────────────
+if __name__ == "__main__":
+    url = f"http://localhost:{FLASK_PORT}"
+    threading.Timer(1.5, lambda: webbrowser.open(url)).start()
+    print(f"\n  SEO FARM: {url}\n")
+    app.run(host=FLASK_HOST, port=FLASK_PORT, debug=False, threaded=True)
+
+# ─────────────────────────────────────────────────────────────
+# OAUTH VK — встроенная авторизация прямо в браузере
+# ─────────────────────────────────────────────────────────────
+VK_CLIENT_ID = "2685278"
+VK_SCOPE     = "groups,wall,photos,video,offline"
+
+@app.route("/vk/auth")
+def vk_auth():
+    redirect_uri = f"http://localhost:{FLASK_PORT}/vk/callback"
+    url = (f"https://oauth.vk.com/authorize?client_id={VK_CLIENT_ID}"
+           f"&display=page&redirect_uri={redirect_uri}"
+           f"&scope={VK_SCOPE}&response_type=token&v=5.131")
+    from flask import redirect as _redirect
+    return _redirect(url)
+
+@app.route("/vk/callback")
+def vk_callback():
+    return """<!DOCTYPE html><html><head><meta charset="utf-8">
+<title>VK Авторизация</title>
+<style>body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;
+height:100vh;margin:0;background:#f0f2f5}.box{background:#fff;padding:40px;border-radius:16px;
+text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.1);max-width:380px}
+button{padding:12px 28px;background:#2196F3;color:#fff;border:none;border-radius:8px;
+cursor:pointer;font-size:1rem;margin-top:12px}</style></head>
+<body><div class="box" id="box"><div style="font-size:2rem">⏳</div>
+<h2>Получаем токен...</h2></div>
+<script>
+const p=new URLSearchParams(window.location.hash.substring(1));
+const token=p.get('access_token');
+const box=document.getElementById('box');
+if(token){
+  fetch('/api/accounts/add',{method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({token,notes:'OAuth '+new Date().toLocaleDateString()})})
+  .then(r=>r.json()).then(d=>{
+    if(d.success){
+      box.innerHTML='<div style="font-size:2rem">✅</div><h2>Аккаунт добавлен!</h2>'+
+        '<p style="color:#666">'+(d.user_info&&d.user_info.name?d.user_info.name:'VK аккаунт')+'</p>'+
+        '<button onclick="window.close()">Закрыть и вернуться</button>';
+    } else {
+      box.innerHTML='<div style="font-size:2rem">❌</div><h2>Ошибка</h2><p>'+(d.error||'?')+'</p>'+
+        '<button onclick="window.close()">Закрыть</button>';
+    }
+  });
+} else {
+  box.innerHTML='<div style="font-size:2rem">❌</div><h2>Токен не получен</h2>'+
+    '<p>Попробуй ещё раз</p><button onclick="window.close()">Закрыть</button>';
+}
+</script></body></html>"""
+
+# ─────────────────────────────────────────────────────────────
+# OAUTH ЯНДЕКС
+# ─────────────────────────────────────────────────────────────
+@app.route("/yandex/auth")
+def yandex_auth():
+    cid = get_setting("yandex_client_id", "")
+    if not cid:
+        return "<h2 style='font-family:sans-serif;padding:40px'>Укажи Yandex Client ID в Настройках → Интеграции</h2>", 400
+    from flask import redirect as _r
+    return _r(f"https://oauth.yandex.ru/authorize?response_type=token&client_id={cid}"
+              f"&redirect_uri=http://localhost:{FLASK_PORT}/yandex/callback")
+
+@app.route("/yandex/callback")
+def yandex_callback():
+    return """<!DOCTYPE html><html><head><meta charset="utf-8"><title>Яндекс</title>
+<style>body{font-family:sans-serif;display:flex;align-items:center;justify-content:center;
+height:100vh;margin:0;background:#f5f5f5}
+.box{background:#fff;padding:40px;border-radius:16px;text-align:center;box-shadow:0 4px 24px rgba(0,0,0,.1)}
+button{padding:12px 28px;background:#fc0;border:none;border-radius:8px;cursor:pointer;font-size:1rem;margin-top:12px}
+</style></head>
+<body><div class="box" id="box"><div style="font-size:2rem">⏳</div><p>Сохраняем токен...</p></div>
+<script>
+const t=new URLSearchParams(window.location.hash.substring(1)).get('access_token');
+const box=document.getElementById('box');
+if(t){
+  fetch('/api/settings',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({yandex_wordstat_token:t})})
+  .then(()=>{
+    box.innerHTML='<div style="font-size:2rem">✅</div><h2>Яндекс подключён!</h2>'+
+      '<button onclick="window.close()">Закрыть</button>';
+  });
+} else {
+  box.innerHTML='<div style="font-size:2rem">❌</div><h2>Ошибка авторизации</h2>';
+}
+</script></body></html>"""
+
+# ─────────────────────────────────────────────────────────────
+# КАМПАНИЯ — запуск полного цикла
+# ─────────────────────────────────────────────────────────────
+_campaign_status = {"running": False, "stage": "", "progress": 0, "log": [], "result": None}
+
+@app.route("/api/campaign/start", methods=["POST"])
+def api_campaign_start():
+    global _campaign_status
+    data     = request.json or {}
+    site_url = data.get("site_url", "").strip() or get_setting("site_url", "")
+    count    = int(data.get("count", 30))
+    if not site_url:
+        return jsonify({"success": False, "error": "Укажи сайт в настройках"})
+    if _campaign_status.get("running"):
+        return jsonify({"success": False, "error": "Кампания уже запущена"})
+
+    _campaign_status = {"running": True, "stage": "parse", "progress": 5,
+                        "site_url": site_url, "log": [], "result": None}
+
+    def run():
+        global _campaign_status
+        try:
+            import json as _j, random as _r
+            from datetime import datetime as _dt, timedelta as _td
+
+            def log(msg, stage="", pct=0):
+                _campaign_status["log"].append(msg)
+                if stage: _campaign_status["stage"] = stage
+                if pct:   _campaign_status["progress"] = pct
+                db_log("INFO", "campaign", msg)
+
+            log(f"Парсинг сайта {site_url}...", "parse", 10)
+            from core.site_parser import parse_site
+            site = parse_site(site_url)
+            log(f"Обработано {site.get('pages_visited',0)} страниц", "analyze", 25)
+
+            from core.ai_content import analyze_niche, generate_keywords, check_ollama_status
+            from core.keyword_base import detect_niche, expand_keywords
+
+            site_data = {}
+            if site.get("text"):
+                if check_ollama_status()["running"]:
+                    log("AI определяет нишу...", "analyze", 35)
+                    site_data = analyze_niche(site["text"])
+                else:
+                    site_data["niche"] = detect_niche(site["text"])
+
+            niche    = site_data.get("niche","")
+            brand    = site_data.get("brand","") or get_setting("brand_name","")
+            region   = site_data.get("region","") or get_setting("region","")
+            services = site_data.get("services",[])
+            log(f"Ниша: {niche or '—'} | Бренд: {brand} | Регион: {region}", "keywords", 45)
+
+            if check_ollama_status()["running"]:
+                log(f"AI генерирует {count} ключей...", "keywords", 55)
+                keywords = generate_keywords(niche or brand, region, services, brand, count)
+            else:
+                log(f"Генерация {count} ключей из базы...", "keywords", 55)
+                keywords = expand_keywords(niche or brand, region, services, count)
+
+            log(f"Готово {len(keywords)} ключей", "schedule", 70)
+
+            day = count_today = scheduled = 0
+            MAX_PER_DAY = 2
+            for kw in keywords:
+                ex = fetchone("SELECT id FROM vk_keywords WHERE keyword=?", (kw,))
+                kid = ex["id"] if ex else execute(
+                    "INSERT INTO vk_keywords(keyword,region,used) VALUES(?,?,0)", (kw, region))
+                if count_today >= MAX_PER_DAY:
+                    day += 1; count_today = 0
+                sched = (_dt.now() + _td(days=day)).replace(
+                    hour=_r.randint(10,20), minute=_r.randint(0,59), second=0)
+                execute(
+                    "INSERT INTO tasks(agent,type,payload,scheduled_time,status)"
+                    " VALUES('vk_groups','create',?,?,'pending')",
+                    (_j.dumps({"keyword_id":kid,"keyword":kw,"site_data":site_data},ensure_ascii=False),
+                     sched.strftime("%Y-%m-%d %H:%M:%S")))
+                count_today += 1; scheduled += 1
+
+            log(f"✅ {scheduled} групп запланировано на {day+1} дней", "done", 100)
+            _campaign_status.update({
+                "running": False, "stage": "done",
+                "result": {"keywords": len(keywords), "scheduled": scheduled,
+                           "days": day+1, "niche": niche, "brand": brand, "region": region}
+            })
+        except Exception as e:
+            _campaign_status.update({"running": False, "stage": "error", "error": str(e)})
+            db_log("ERROR", "campaign", str(e))
+
+    threading.Thread(target=run, daemon=True).start()
+    return jsonify({"success": True})
+
+@app.route("/api/campaign/status")
+def api_campaign_status():
+    return jsonify(_campaign_status)
+
+@app.route("/api/campaign/stop", methods=["POST"])
+def api_campaign_stop():
+    _campaign_status["running"] = False
+    return jsonify({"success": True})
+
+# ─────────────────────────────────────────────────────────────
+# AI статус
+# ─────────────────────────────────────────────────────────────
+@app.route("/api/ai/status")
+def api_ai_status():
+    from core.ai_content import check_ollama_status
+    return jsonify(check_ollama_status())
+
+@app.route("/api/ai/test", methods=["POST"])
+def api_ai_test():
+    from core.ai_content import generate_group_name
+    data = request.json or {}
+    res  = generate_group_name(data.get("keyword","тест"), "", data.get("region","Москва"))
+    return jsonify({"success": bool(res), "result": res})
+
+# ─────────────────────────────────────────────────────────────
+# САЙТ — быстрый анализ
+# ─────────────────────────────────────────────────────────────
+@app.route("/api/site/analyze", methods=["POST"])
+def api_site_analyze():
+    data = request.json or {}
+    url  = data.get("url","").strip()
+    if not url:
+        return jsonify({"success": False, "error": "URL не указан"})
+    from core.site_parser import parse_site
+    from core.ai_content import analyze_niche, check_ollama_status
+    from core.keyword_base import detect_niche
+    site = parse_site(url)
+    site_data = {}
+    if site.get("text"):
+        if check_ollama_status()["running"]:
+            site_data = analyze_niche(site["text"])
+        else:
+            site_data["niche"] = detect_niche(site["text"])
+    site_data["pages_visited"] = site.get("pages_visited", 0)
+    site_data["contacts"]      = site.get("contacts", {})
+    return jsonify({"success": True, "data": site_data})
+
+# ─────────────────────────────────────────────────────────────
+# ПОЗИЦИИ
+# ─────────────────────────────────────────────────────────────
+@app.route("/api/positions")
+def api_positions():
+    groups = fetchall(
+        "SELECT name,vk_group_url,status,posts_count,reposts_done "
+        "FROM vk_groups ORDER BY created_at DESC LIMIT 50")
+    done     = sum(1 for g in groups if g["status"]=="done")
+    creating = sum(1 for g in groups if g["status"]=="creating")
+    pending  = fetchall("SELECT COUNT(*) as n FROM tasks WHERE agent='vk_groups' AND status='pending'")
+    return jsonify({
+        "groups_total":    len(groups),
+        "groups_done":     done,
+        "groups_creating": creating,
+        "groups_planned":  pending[0]["n"] if pending else 0,
+        "groups":          [dict(g) for g in groups[:20]],
+    })
