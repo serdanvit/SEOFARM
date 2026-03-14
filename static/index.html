@@ -670,6 +670,90 @@ tr:last-child td { border-bottom:none; }
 </head>
 <body>
 
+
+<!-- ══════════════ ОНБОРДИНГ ══════════════ -->
+<div id="onboarding" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);
+  z-index:9999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px)">
+  <div style="background:var(--bg-card);border-radius:var(--r-lg);padding:40px;max-width:520px;
+    width:90%;box-shadow:var(--sh-lg)">
+    <div style="text-align:center;margin-bottom:28px">
+      <div style="font-size:2rem;margin-bottom:8px">🚀</div>
+      <div style="font-family:var(--f-h);font-size:1.5rem;color:var(--accent);font-weight:700">
+        Добро пожаловать в SEO FARM
+      </div>
+      <div style="color:var(--txt-2);margin-top:6px;font-size:.95rem">
+        Три шага чтобы начать продвижение
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:16px;margin-bottom:28px">
+      <div style="display:flex;align-items:flex-start;gap:14px;padding:16px;
+        background:var(--accent-bg2);border-radius:var(--r-md);border:1px solid var(--border)">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--grad);
+          display:flex;align-items:center;justify-content:center;color:#fff;
+          font-weight:700;flex-shrink:0;font-size:.9rem">1</div>
+        <div>
+          <div style="font-weight:600;margin-bottom:4px">Введи сайт и регион</div>
+          <div style="font-size:.85rem;color:var(--txt-2)">
+            Система сама определит нишу, услуги и сгенерирует ключевые слова
+          </div>
+          <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap">
+            <input id="ob-site" type="text" placeholder="https://mysite.ru"
+              style="flex:2;min-width:160px;height:38px;border:1px solid var(--border);
+              border-radius:var(--r-sm);padding:0 10px;font-size:.9rem;background:var(--bg-input)">
+            <input id="ob-region" type="text" placeholder="Тюмень"
+              style="flex:1;min-width:100px;height:38px;border:1px solid var(--border);
+              border-radius:var(--r-sm);padding:0 10px;font-size:.9rem;background:var(--bg-input)">
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:14px;padding:16px;
+        background:var(--accent-bg2);border-radius:var(--r-md);border:1px solid var(--border)">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--grad);
+          display:flex;align-items:center;justify-content:center;color:#fff;
+          font-weight:700;flex-shrink:0;font-size:.9rem">2</div>
+        <div style="flex:1">
+          <div style="font-weight:600;margin-bottom:4px">Подключи аккаунт VK</div>
+          <div style="font-size:.85rem;color:var(--txt-2);margin-bottom:10px">
+            Нужен личный аккаунт VK — через него будут создаваться группы
+          </div>
+          <button onclick="window.open('/vk/auth','_blank','width=600,height=700')"
+            style="height:38px;padding:0 18px;background:var(--grad);color:#fff;
+            border:none;border-radius:var(--r-sm);cursor:pointer;font-size:.9rem;
+            font-weight:600;display:flex;align-items:center;gap:8px">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+            Войти через VK
+          </button>
+        </div>
+      </div>
+      <div style="display:flex;align-items:flex-start;gap:14px;padding:16px;
+        background:var(--accent-bg2);border-radius:var(--r-md);border:1px solid var(--border)">
+        <div style="width:32px;height:32px;border-radius:50%;background:var(--grad);
+          display:flex;align-items:center;justify-content:center;color:#fff;
+          font-weight:700;flex-shrink:0;font-size:.9rem">3</div>
+        <div>
+          <div style="font-weight:600;margin-bottom:4px">Нажми «Запустить» на дашборде</div>
+          <div style="font-size:.85rem;color:var(--txt-2)">
+            Система создаст 30 групп VK под разные поисковые запросы вашей ниши.
+            По 1–2 группы в день чтобы не попасть под блокировку.
+          </div>
+        </div>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button onclick="closeOnboarding()"
+        style="height:44px;padding:0 20px;background:var(--bg-hover);color:var(--txt-2);
+        border:1px solid var(--border);border-radius:var(--r-sm);cursor:pointer;font-size:.9rem">
+        Пропустить
+      </button>
+      <button onclick="saveOnboarding()"
+        style="height:44px;padding:0 24px;background:var(--grad);color:#fff;
+        border:none;border-radius:var(--r-sm);cursor:pointer;font-size:.95rem;font-weight:600">
+        Сохранить и начать →
+      </button>
+    </div>
+  </div>
+</div>
+
 <!-- ══════════════ САЙДБАР ══════════════ -->
 <aside class="sidebar">
 
@@ -718,27 +802,20 @@ tr:last-child td { border-bottom:none; }
 
   <!-- Агент 1 -->
   <div class="nb">
-    <div class="nb-lbl">Агент 1 — VK Группы</div>
-
-    <div class="ni" onclick="go('vk-keywords')">
-      <div class="gico">
-        <svg class="ico-wh" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      </div>
-      Ключи
-    </div>
+    <div class="nb-lbl">Агент 1 — VK Продвижение</div>
 
     <div class="ni" onclick="go('vk-groups')">
       <div class="gico">
         <svg class="ico-wh" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
       </div>
-      Группы
+      Мои группы
     </div>
 
     <div class="ni" onclick="go('vk-media')">
       <div class="gico">
         <svg class="ico-wh" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
       </div>
-      Медиа
+      Медиафайлы
     </div>
 
     <div class="ni" onclick="go('vk-activity')">
@@ -746,6 +823,13 @@ tr:last-child td { border-bottom:none; }
         <svg class="ico-wh" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
       </div>
       Активность
+    </div>
+
+    <div class="ni" onclick="go('vk-keywords')" style="opacity:.6;font-size:.88rem">
+      <div class="gico">
+        <svg class="ico-wh" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      </div>
+      Ключи (расширенно)
     </div>
   </div>
 
@@ -817,50 +901,103 @@ tr:last-child td { border-bottom:none; }
 
     <!-- ════════ ДАШБОРД ════════ -->
     <div class="section active" id="sec-dashboard">
+
+      <!-- ПУЛЬТ УПРАВЛЕНИЯ -->
+      <div class="card" style="background:linear-gradient(135deg,#1a237e 0%,#283593 100%);color:#fff;border:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px">
+          <div>
+            <div style="font-size:1.4rem;font-weight:700;margin-bottom:4px">🚀 SEO FARM — Пульт управления</div>
+            <div style="opacity:.8;font-size:.9rem" id="pulse-site">Сайт не задан — укажи в Настройках</div>
+          </div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn" id="btn-launch-all"
+              style="background:#fff;color:#1a237e;font-weight:700;padding:12px 28px;font-size:1rem"
+              onclick="launchCampaign()">▶ Запустить всё</button>
+            <button class="btn" id="btn-stop-all"
+              style="background:rgba(255,255,255,.15);color:#fff;padding:12px 20px"
+              onclick="stopCampaign()" disabled>⏸ Стоп</button>
+          </div>
+        </div>
+        <!-- Прогресс кампании -->
+        <div id="campaign-progress-wrap" style="margin-top:20px;display:none">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px">
+            <span id="campaign-stage-lbl" style="font-size:.9rem;opacity:.9">Запуск...</span>
+            <span id="campaign-pct-lbl" style="font-size:.9rem;opacity:.9">0%</span>
+          </div>
+          <div style="background:rgba(255,255,255,.2);border-radius:8px;height:8px;overflow:hidden">
+            <div id="campaign-bar" style="background:#64b5f6;height:100%;width:0%;transition:width .4s;border-radius:8px"></div>
+          </div>
+          <div id="campaign-log" style="margin-top:12px;max-height:120px;overflow-y:auto;font-size:.82rem;opacity:.85;line-height:1.6"></div>
+        </div>
+      </div>
+
+      <!-- СТАТУС САЙТА — где он сейчас -->
+      <div class="g3" id="position-cards" style="grid-template-columns:repeat(3,1fr)">
+        <div class="scard s-blue"><div class="sval" id="pos-done">—</div><div class="slbl">Групп в поиске</div></div>
+        <div class="scard s-green"><div class="sval" id="pos-planned">—</div><div class="slbl">Запланировано</div></div>
+        <div class="scard s-orange"><div class="sval" id="pos-creating">—</div><div class="slbl">Создаётся сейчас</div></div>
+      </div>
+
       <div class="stats-row" id="stats-row"></div>
+
+      <!-- ТЕКУЩАЯ АКТИВНОСТЬ -->
       <div class="g2">
         <div class="card">
           <div class="ctitle">
-            <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></div>
-            Быстрые действия
+            <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+            Что происходит прямо сейчас
           </div>
-          <div class="qa-grid">
-            <button class="qa-btn" onclick="go('vk-keywords')">
-              <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg></div>
-              <div><div class="qa-lbl">Создать группы</div><div class="qa-sub">Агент 1 — VK</div></div>
-            </button>
-            <button class="qa-btn" onclick="runMonitorNow()">
-              <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
-              <div><div class="qa-lbl">Сканировать</div><div class="qa-sub">Агент 2 — комментарии</div></div>
-            </button>
-            <button class="qa-btn" onclick="API('/vk/reposts-now','POST').then(()=>notify('Репосты запущены','success'))">
-              <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg></div>
-              <div><div class="qa-lbl">Запустить репосты</div><div class="qa-sub">VK — все группы</div></div>
-            </button>
-            <button class="qa-btn" onclick="go('articles')">
-              <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg></div>
-              <div><div class="qa-lbl">Добавить статью</div><div class="qa-sub">Агент 3</div></div>
-            </button>
+          <div id="live-activity" style="font-size:.9rem;color:var(--txt-2);line-height:2">
+            <div style="text-align:center;padding:20px;color:var(--txt-dim)">Нет активных задач</div>
           </div>
         </div>
         <div class="card">
           <div class="ctitle">
-            <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
-            Расписание автоматики
+            <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+            Ближайшие задачи
           </div>
-          <div id="auto-sched" style="font-size:0.92rem;color:var(--txt-2)">Загрузка...</div>
+          <div id="upcoming-tasks" style="font-size:.9rem;color:var(--txt-2);line-height:2">Загрузка...</div>
         </div>
       </div>
-      <div class="card">
+
+      <!-- AI + ГРУППЫ В ПОИСКЕ -->
+      <div class="g2">
+        <div class="card">
+          <div class="card-row">
+            <div class="ctitle" style="margin:0">
+              <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+              AI-статус
+            </div>
+            <div id="ai-badge" style="font-size:.8rem;padding:4px 10px;border-radius:20px;background:var(--bg-2)">проверяю...</div>
+          </div>
+          <div id="ai-info" style="font-size:.88rem;color:var(--txt-2);margin-top:8px">Ollama — локальная AI модель для генерации контента</div>
+          <button class="btn btn-ghost btn-sm mt12" onclick="testAI()">Тест генерации</button>
+          <div id="ai-test-result" style="margin-top:8px;font-size:.85rem;color:var(--txt-dim);display:none"></div>
+        </div>
+        <div class="card">
+          <div class="card-row">
+            <div class="ctitle" style="margin:0">
+              <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
+              Последние лиды
+            </div>
+            <button class="btn btn-soft btn-sm" onclick="go('monitor-leads')">Все</button>
+          </div>
+          <div id="dash-leads"></div>
+        </div>
+      </div>
+
+      <!-- ГРУППЫ В ПОИСКЕ -->
+      <div class="card" id="groups-in-search-card">
         <div class="card-row">
           <div class="ctitle" style="margin:0">
-            <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></div>
-            Последние лиды
+            <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg></div>
+            Мои группы в поиске
           </div>
-          <button class="btn btn-soft btn-sm" onclick="go('monitor-leads')">Все лиды</button>
+          <button class="btn btn-soft btn-sm" onclick="go('vk-groups')">Все группы</button>
         </div>
-        <div id="dash-leads"></div>
+        <div id="dash-groups" style="margin-top:8px"></div>
       </div>
+
     </div>
 
     <!-- ════════ АККАУНТЫ ════════ -->
@@ -875,6 +1012,14 @@ tr:last-child td { border-bottom:none; }
             <label>Токен пользователя VK</label>
             <input type="password" id="new-token" placeholder="vk1.a.XXXXX...">
             <span class="hint hint-w">Нужен токен аккаунта, не группы. Запусти: python get_token.py</span>
+          </div>
+          <div class="fg" style="flex:0 0 auto;display:flex;flex-direction:column;justify-content:flex-end">
+            <label>&nbsp;</label>
+            <button class="btn btn-p" style="white-space:nowrap;padding:10px 20px"
+              onclick="window.open('/vk/auth','_blank','width=600,height=700')">
+              🔑 Войти через VK
+            </button>
+            <span class="hint" style="text-align:center">Без копирования токена</span
           </div>
           <div class="fg">
             <label>Заметка</label>
@@ -932,6 +1077,46 @@ tr:last-child td { border-bottom:none; }
         </div>
         <button class="btn btn-p btn-lg mt16" onclick="saveSettings()">Сохранить все настройки</button>
       </div>
+
+      <!-- Яндекс интеграции -->
+      <div class="card">
+        <div class="ctitle">
+          <div class="gico-l"><svg class="ico-ac" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+          Яндекс интеграции <span style="font-size:.75rem;opacity:.6;font-weight:400">(необязательно)</span>
+        </div>
+        <p class="hint" style="margin-bottom:16px">Ускоряет индексацию групп в Яндексе и позволяет получать реальную частотность ключевых слов.</p>
+        <div class="frow">
+          <div class="fg">
+            <label>Яндекс Директ токен <span class="hint">(для Wordstat)</span></label>
+            <input type="password" id="s-yd-token" placeholder="Токен API Яндекс Директа">
+            <span class="hint">Нужен для получения частотности ключевых слов из Яндекс.Wordstat</span>
+          </div>
+          <div class="fg">
+            <label>Яндекс логин <span class="hint">(для Wordstat)</span></label>
+            <input type="text" id="s-yd-login" placeholder="your-yandex-login">
+          </div>
+        </div>
+        <div class="frow mt12">
+          <div class="fg">
+            <label>Яндекс Client ID <span class="hint">(для OAuth)</span></label>
+            <input type="text" id="s-ya-client" placeholder="ID приложения Яндекс">
+            <span class="hint">После заполнения появится кнопка авторизации Яндекс</span>
+          </div>
+          <div class="fg" style="display:flex;flex-direction:column;justify-content:flex-end">
+            <label>&nbsp;</label>
+            <button onclick="window.open('/yandex/auth','_blank','width=600,height=700')"
+              style="height:var(--input-h);padding:0 16px;background:#fc0;border:none;
+              border-radius:var(--r-sm);cursor:pointer;font-weight:600;font-size:.9rem">
+              Подключить Яндекс
+            </button>
+          </div>
+        </div>
+        <div class="fg mt12">
+          <label>Яндекс Вебмастер токен <span class="hint">(для ускорения индексации)</span></label>
+          <input type="password" id="s-ym-token" placeholder="Токен Яндекс Вебмастера">
+        </div>
+        <button class="btn btn-p mt16" onclick="saveSettings()">Сохранить</button>
+      </div>
     </div>
 
     <!-- ════════ VK КЛЮЧИ ════════ -->
@@ -972,6 +1157,61 @@ tr:last-child td { border-bottom:none; }
 
     <!-- ════════ VK ГРУППЫ ════════ -->
     <div class="section" id="sec-vk-groups">
+
+      <!-- Запуск кампании -->
+      <div class="card" style="background:linear-gradient(135deg,#1a237e,#283593);color:#fff;border:none;margin-bottom:0">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+          <div>
+            <div style="font-family:var(--f-h);font-size:1.2rem;font-weight:700;margin-bottom:4px">
+              Создание VK групп
+            </div>
+            <div style="opacity:.8;font-size:.88rem">
+              Система парсит сайт, генерирует ключи через AI и создаёт группы по расписанию
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <input id="vkg-site" type="text" placeholder="https://mysite.ru"
+              style="height:40px;padding:0 12px;border-radius:var(--r-sm);border:none;
+              font-size:.9rem;width:200px;background:rgba(255,255,255,.15);color:#fff;
+              outline:none" onfocus="this.style.background='rgba(255,255,255,.25)'"
+              onblur="this.style.background='rgba(255,255,255,.15)'">
+            <select id="vkg-count"
+              style="height:40px;padding:0 10px;border-radius:var(--r-sm);border:none;
+              background:rgba(255,255,255,.15);color:#fff;font-size:.9rem;cursor:pointer">
+              <option value="10">10 групп</option>
+              <option value="20">20 групп</option>
+              <option value="30" selected>30 групп</option>
+            </select>
+            <button id="vkg-launch-btn" onclick="launchGroupCampaign()"
+              style="height:40px;padding:0 20px;background:#fff;color:#1a237e;
+              border:none;border-radius:var(--r-sm);font-weight:700;cursor:pointer;
+              font-size:.9rem;white-space:nowrap">
+              ▶ Запустить
+            </button>
+          </div>
+        </div>
+        <!-- Прогресс -->
+        <div id="vkg-progress-wrap" style="margin-top:16px;display:none">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:.82rem;opacity:.9">
+            <span id="vkg-stage">Запуск...</span>
+            <span id="vkg-pct">0%</span>
+          </div>
+          <div style="background:rgba(255,255,255,.2);border-radius:6px;height:6px">
+            <div id="vkg-bar" style="background:#64b5f6;height:100%;width:0%;
+              transition:width .4s;border-radius:6px"></div>
+          </div>
+          <div id="vkg-log" style="margin-top:8px;font-size:.8rem;opacity:.8;max-height:80px;overflow-y:auto"></div>
+        </div>
+      </div>
+
+      <!-- Статистика -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:12px 0">
+        <div class="scard s-blue"><div class="sval" id="vkg-done">—</div><div class="slbl">В поиске</div></div>
+        <div class="scard s-orange"><div class="sval" id="vkg-creating">—</div><div class="slbl">Создаётся</div></div>
+        <div class="scard s-purple"><div class="sval" id="vkg-planned">—</div><div class="slbl">В очереди</div></div>
+      </div>
+
+      <!-- Список групп -->
       <div class="card">
         <div class="card-row">
           <div class="ctitle" style="margin:0">
@@ -981,7 +1221,7 @@ tr:last-child td { border-bottom:none; }
           <button class="btn btn-ghost btn-sm" onclick="loadVkGroups()">Обновить</button>
         </div>
         <div class="tw"><table>
-          <thead><tr><th>Название</th><th>VK ID</th><th>Статус</th><th>Репостов</th><th>Создана</th><th></th></tr></thead>
+          <thead><tr><th>Название</th><th>Ссылка</th><th>Статус</th><th>Постов</th><th>Репостов</th><th>Создана</th></tr></thead>
           <tbody id="groups-body"></tbody>
         </table></div>
       </div>
@@ -1220,7 +1460,7 @@ const TITLES={
 };
 const LOAD={
   dashboard:loadDash, accounts:loadAccounts, settings:loadSettings, logs:loadLogs,
-  'vk-keywords':loadKeywords, 'vk-groups':loadVkGroups, 'vk-media':loadMedia,
+  'vk-keywords':loadKeywords, 'vk-groups':()=>{loadVkGroupsStats();loadVkGroups();}, 'vk-media':loadMedia,
   'monitor-queries':loadMonitorQueries, 'monitor-leads':loadLeads, articles:loadArticles,
 };
 
@@ -1230,7 +1470,36 @@ function go(name){
   document.getElementById('sec-'+name)?.classList.add('active');
   document.querySelector(`.ni[onclick="go('${name}')"]`)?.classList.add('active');
   document.getElementById('page-title').textContent=TITLES[name]||name;
-  if(LOAD[name])LOAD[name]();
+  if(name==='dashboard'){loadDashFull();startDashTimer();}
+  else{stopDashTimer();if(LOAD[name])LOAD[name]();}
+}
+
+
+// ── ОНБОРДИНГ ────────────────────────────────────
+async function checkFirstLaunch(){
+  const s = await API('/settings');
+  const settings = s.settings || s || {};
+  const hasAccounts = (await API('/accounts')).length > 0;
+  const hasSite = !!(settings.site_url);
+  if(!hasAccounts || !hasSite){
+    document.getElementById('onboarding').style.display='flex';
+    // Заполняем поле сайта если уже есть
+    if(hasSite) document.getElementById('ob-site').value = settings.site_url;
+  }
+}
+function closeOnboarding(){
+  document.getElementById('onboarding').style.display='none';
+}
+async function saveOnboarding(){
+  const site = document.getElementById('ob-site').value.trim();
+  const region = document.getElementById('ob-region').value.trim();
+  if(site) await API('/settings','POST',{site_url:site,region:region});
+  closeOnboarding();
+  if(site){
+    document.getElementById('vkg-site').value = site;
+    loadPulseSite();
+    notify('Настройки сохранены — теперь нажми «Запустить всё»','success');
+  }
 }
 
 // ── ДАШБОРД ──────────────────────────────────────
@@ -1326,21 +1595,33 @@ async function checkAccounts(){
 async function loadSettings(){
   const{settings}=await API('/settings'); const s=settings||{};
   const map={brand:'brand_name',region:'region',site:'site_url',nucleus:'nucleus_url',
-    desc:'base_description',pinned:'pinned_post_text','tg-token':'telegram_bot_token','tg-chats':'telegram_chat_ids'};
+    desc:'base_description',pinned:'pinned_post_text','tg-token':'telegram_bot_token',
+    'tg-chats':'telegram_chat_ids','yd-token':'yandex_wordstat_token',
+    'yd-login':'yandex_wordstat_login','ya-client':'yandex_client_id',
+    'ym-token':'yandex_webmaster_token'};
   Object.entries(map).forEach(([k,v])=>{const e=document.getElementById('s-'+k);if(e)e.value=s[v]||'';});
+  // Заполняем поле сайта в секции групп если пустое
+  const vkgSite = document.getElementById('vkg-site');
+  if(vkgSite && !vkgSite.value && s.site_url) vkgSite.value = s.site_url;
 }
 async function saveSettings(){
+  const g=id=>{ const e=document.getElementById(id); return e?e.value:''; };
   await API('/settings','POST',{
-    brand_name:document.getElementById('s-brand').value,
-    region:document.getElementById('s-region').value,
-    site_url:document.getElementById('s-site').value,
-    nucleus_url:document.getElementById('s-nucleus').value,
-    base_description:document.getElementById('s-desc').value,
-    pinned_post_text:document.getElementById('s-pinned').value,
-    telegram_bot_token:document.getElementById('s-tg-token').value,
-    telegram_chat_ids:document.getElementById('s-tg-chats').value,
+    brand_name:g('s-brand'),
+    region:g('s-region'),
+    site_url:g('s-site'),
+    nucleus_url:g('s-nucleus'),
+    base_description:g('s-desc'),
+    pinned_post_text:g('s-pinned'),
+    telegram_bot_token:g('s-tg-token'),
+    telegram_chat_ids:g('s-tg-chats'),
+    yandex_wordstat_token:g('s-yd-token'),
+    yandex_wordstat_login:g('s-yd-login'),
+    yandex_client_id:g('s-ya-client'),
+    yandex_webmaster_token:g('s-ym-token'),
   });
   notify('Настройки сохранены','success');
+  loadPulseSite();
 }
 
 // ── VK КЛЮЧИ ──────────────────────────────────────
@@ -1385,12 +1666,76 @@ async function startGroups(){
 }
 
 // ── VK ГРУППЫ ─────────────────────────────────────
+// ── VK ГРУППЫ — кампания из секции ──────────────
+let _vkgTimer = null;
+async function launchGroupCampaign(){
+  const siteEl = document.getElementById('vkg-site');
+  const site = siteEl?.value.trim() || '';
+  const count = parseInt(document.getElementById('vkg-count')?.value||'30');
+
+  // Если сайт не введён — берём из настроек
+  const settings = await API('/settings');
+  const finalSite = site || (settings.settings||{}).site_url || '';
+
+  if(!finalSite){ notify('Введи ссылку на сайт','error'); siteEl?.focus(); return; }
+  if(!confirm(`Запустить кампанию для ${finalSite}?\n\nСистема:\n• Обойдёт все страницы сайта\n• AI определит нишу и услуги\n• Сгенерирует ${count} ключевых слов\n• Создаст группы по 1-2 в день`)) return;
+
+  const res = await API('/campaign/start','POST',{site_url:finalSite,count});
+  if(!res.success){ notify(res.error||'Ошибка запуска','error'); return; }
+
+  document.getElementById('vkg-progress-wrap').style.display='block';
+  document.getElementById('vkg-launch-btn').disabled=true;
+  document.getElementById('vkg-launch-btn').textContent='⏳ Идёт работа...';
+  notify('Кампания запущена!','success');
+  _vkgTimer = setInterval(pollVkgCampaign, 1500);
+}
+
+async function pollVkgCampaign(){
+  const s = await API('/campaign/status');
+  const stageNames={parse:'Парсинг сайта...',analyze:'AI анализирует нишу...',
+    keywords:'Генерация ключей...',schedule:'Планирование групп...',
+    done:'✅ Готово!',error:'❌ Ошибка'};
+  const bar=document.getElementById('vkg-bar');
+  const stage=document.getElementById('vkg-stage');
+  const pct=document.getElementById('vkg-pct');
+  const log=document.getElementById('vkg-log');
+  if(bar) bar.style.width=(s.progress||0)+'%';
+  if(stage) stage.textContent=stageNames[s.stage]||s.stage||'...';
+  if(pct) pct.textContent=(s.progress||0)+'%';
+  if(log&&s.log) log.innerHTML=s.log.slice(-4).map(l=>'<div>'+l+'</div>').join('');
+  if(!s.running){
+    clearInterval(_vkgTimer);
+    const btn=document.getElementById('vkg-launch-btn');
+    if(btn){btn.disabled=false;btn.textContent='▶ Запустить';}
+    if(s.stage==='done'&&s.result){
+      const r=s.result;
+      notify(`✅ ${r.scheduled} групп запланировано на ${r.days} дней`,'success');
+    }
+    if(s.stage==='error') notify('Ошибка: '+(s.error||'?'),'error');
+    loadVkGroupsStats();
+    loadVkGroups();
+  }
+}
+
+async function loadVkGroupsStats(){
+  const d=await API('/positions');
+  const el=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  el('vkg-done',d.groups_done||0);
+  el('vkg-creating',d.groups_creating||0);
+  el('vkg-planned',d.groups_planned||0);
+  // Тоже обновляем дашборд
+  el('pos-done',d.groups_done||0);
+  el('pos-planned',d.groups_planned||0);
+  el('pos-creating',d.groups_creating||0);
+}
+
 async function loadVkGroups(){
+  loadVkGroupsStats();
   const{groups}=await API('/vk/groups');
   document.getElementById('groups-body').innerHTML=(groups||[]).map(g=>`
     <tr>
       <td style="max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap"><b>${esc(g.name||'—')}</b></td>
-      <td style="color:var(--txt-dim)">${g.vk_group_id||'—'}</td>
+      <td>${g.vk_group_url?`<a href="${g.vk_group_url}" target="_blank" style="color:var(--accent);font-size:.82rem">${g.vk_group_url.replace('https://','')}</a>`:'<span style="color:var(--txt-dim)">—</span>'}</td>
       <td>${pill(g.status)}</td>
       <td><span class="pill p-purple">${g.reposts_done||0}</span></td>
       <td style="color:var(--txt-dim)">${(g.created_at||'').substring(0,16)}</td>
@@ -1574,10 +1919,195 @@ setInterval(()=>{
     new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit',second:'2-digit'});
 },1000);
 setInterval(()=>{
-  if(document.getElementById('sec-dashboard').classList.contains('active'))loadDash();
+  
+// ═══════════════════════════════════════════════════
+// ЕДИНЫЙ ПУЛЬТ — реалтайм обновление
+// ═══════════════════════════════════════════════════
+let _campaignTimer = null;
+let _dashTimer = null;
+
+async function launchCampaign() {
+  const site = (await API('/settings')).site_url || '';
+  if (!site) { notify('Сначала укажи сайт в Настройках', 'error'); go('settings'); return; }
+  if (!confirm(`Запустить кампанию для ${site}?\n\nСистема:\n• Проанализирует сайт\n• Сгенерирует 30 ключевых слов\n• Запланирует создание групп`)) return;
+
+  const res = await API('/campaign/start', 'POST', {site_url: site, count: 30});
+  if (!res.success) { notify(res.error || 'Ошибка', 'error'); return; }
+
+  document.getElementById('campaign-progress-wrap').style.display = 'block';
+  document.getElementById('btn-stop-all').disabled = false;
+  document.getElementById('btn-launch-all').disabled = true;
+  notify('Кампания запущена!', 'success');
+  _campaignTimer = setInterval(pollCampaign, 1500);
+}
+
+async function pollCampaign() {
+  const s = await API('/campaign/status');
+  const bar   = document.getElementById('campaign-bar');
+  const stagel = document.getElementById('campaign-stage-lbl');
+  const pctl   = document.getElementById('campaign-pct-lbl');
+  const logEl  = document.getElementById('campaign-log');
+
+  const stageNames = {
+    parse:'Парсинг сайта...', analyze:'Анализ ниши через AI...',
+    keywords:'Генерация ключей...', schedule:'Планирование групп...',
+    done:'✅ Готово!', error:'❌ Ошибка'
+  };
+  if (bar) bar.style.width = (s.progress||0)+'%';
+  if (stagel) stagel.textContent = stageNames[s.stage] || s.stage || '...';
+  if (pctl) pctl.textContent = (s.progress||0)+'%';
+  if (logEl && s.log) logEl.innerHTML = s.log.map(l=>'<div>'+l+'</div>').join('');
+
+  if (!s.running) {
+    clearInterval(_campaignTimer);
+    document.getElementById('btn-launch-all').disabled = false;
+    document.getElementById('btn-stop-all').disabled = true;
+    if (s.stage === 'done' && s.result) {
+      const r = s.result;
+      notify(`✅ Готово! ${r.scheduled} групп запланировано на ${r.days} дней`, 'success');
+    }
+    if (s.stage === 'error') notify('Ошибка: '+(s.error||'?'), 'error');
+    loadPositions();
+  }
+}
+
+async function stopCampaign() {
+  await API('/campaign/stop', 'POST');
+  clearInterval(_campaignTimer);
+  document.getElementById('btn-launch-all').disabled = false;
+  document.getElementById('btn-stop-all').disabled = true;
+  notify('Кампания остановлена', 'info');
+}
+
+async function loadPositions() {
+  const d = await API('/positions');
+  const el = (id, v) => { const e = document.getElementById(id); if(e) e.textContent = v; };
+  el('pos-done',     d.groups_done     || 0);
+  el('pos-planned',  d.groups_planned  || 0);
+  el('pos-creating', d.groups_creating || 0);
+
+  const dg = document.getElementById('dash-groups');
+  if (dg && d.groups && d.groups.length) {
+    const statusIco = {done:'✅', creating:'⏳', pending:'📅'};
+    dg.innerHTML = d.groups.slice(0,8).map(g=>`
+      <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <span>${statusIco[g.status]||'•'}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:.88rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${g.name||'—'}</div>
+          ${g.vk_group_url?`<a href="${g.vk_group_url}" target="_blank" style="font-size:.78rem;color:var(--accent)">${g.vk_group_url.replace('https://','')}</a>`:''}
+        </div>
+        <div style="text-align:right;font-size:.78rem;color:var(--txt-dim);white-space:nowrap">
+          ${g.posts_count||0} постов<br>${g.reposts_done||0} репостов
+        </div>
+      </div>`).join('');
+  } else if (dg) {
+    dg.innerHTML = '<div style="text-align:center;padding:20px;color:var(--txt-dim)">Групп ещё нет — запусти кампанию</div>';
+  }
+}
+
+async function loadLiveActivity() {
+  const tasks = await API('/tasks?status=running&limit=5');
+  const pending = await API('/tasks?status=pending&limit=5');
+  const el = document.getElementById('live-activity');
+  if (!el) return;
+
+  let html = '';
+  (tasks||[]).forEach(t => {
+    html += `<div style="display:flex;align-items:center;gap:8px">
+      <span style="color:#f39c12">⚙</span>
+      <span>${t.agent} — ${t.type}</span>
+      <span style="font-size:.8rem;color:var(--txt-dim);margin-left:auto">${(t.created_at||'').slice(11,16)}</span>
+    </div>`;
+  });
+
+  const up = document.getElementById('upcoming-tasks');
+  if (up) {
+    let uhtml = '';
+    (pending||[]).slice(0,6).forEach(t => {
+      uhtml += `<div style="display:flex;align-items:center;gap:8px">
+        <span style="color:#3498db">📅</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-size:.85rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+            ${t.agent}/${t.type} ${t.payload?'— '+(JSON.parse(t.payload||'{}').keyword||''):''}
+          </div>
+        </div>
+        <span style="font-size:.78rem;color:var(--txt-dim);white-space:nowrap">${(t.scheduled_time||'').slice(0,16)}</span>
+      </div>`;
+    });
+    up.innerHTML = uhtml || '<div style="color:var(--txt-dim);padding:8px 0">Нет запланированных задач</div>';
+  }
+
+  el.innerHTML = html || '<div style="text-align:center;padding:20px;color:var(--txt-dim)">Нет активных задач</div>';
+}
+
+async function checkAIStatus() {
+  const s = await API('/ai/status');
+  const badge = document.getElementById('ai-badge');
+  const info  = document.getElementById('ai-info');
+  if (!badge) return;
+  if (s.running) {
+    badge.style.background = '#e8f5e9';
+    badge.style.color = '#2e7d32';
+    badge.textContent = '● Работает';
+    if (info) info.textContent = `Модель: ${s.active_model||'?'} • Ollama запущена`;
+  } else {
+    badge.style.background = '#ffebee';
+    badge.style.color = '#c62828';
+    badge.textContent = '○ Недоступна';
+    if (info) info.textContent = 'Ollama не запущена. Запусти Ollama и модель seofarm-ai';
+  }
+}
+
+async function testAI() {
+  const res = document.getElementById('ai-test-result');
+  if (res) { res.style.display='block'; res.textContent = '⏳ Генерирую...'; }
+  const r = await API('/ai/test','POST',{keyword:'стоматология',region:'Тюмень'});
+  if (res) res.textContent = r.success ? '✅ ' + r.result : '❌ AI недоступен — используем шаблоны';
+}
+
+async function loadPulseSite() {
+  const s = await API('/settings');
+  const el = document.getElementById('pulse-site');
+  if (!el) return;
+  const site = s.site_url || '';
+  const brand = s.brand_name || '';
+  const region = s.region || '';
+  if (site) {
+    el.textContent = `${brand||site} • ${region||'регион не указан'} • ${site}`;
+  } else {
+    el.textContent = 'Сайт не задан — укажи в Настройках';
+  }
+}
+
+function loadDashFull() {
+  loadPulseSite();
+  loadPositions();
+  loadLiveActivity();
+  checkAIStatus();
+  loadDash();
+  if (_campaignTimer) pollCampaign();
+}
+
+// Автообновление каждые 15 секунд когда открыт дашборд
+function startDashTimer() {
+  stopDashTimer();
+  _dashTimer = setInterval(() => {
+    if (document.getElementById('sec-dashboard').classList.contains('active')) {
+      loadLiveActivity();
+      loadPositions();
+    }
+  }, 15000);
+}
+function stopDashTimer() {
+  if (_dashTimer) { clearInterval(_dashTimer); _dashTimer = null; }
+}
+
+if(document.getElementById('sec-dashboard').classList.contains('active'))loadDash();
 },30000);
 
-loadDash();
+loadDashFull();
+startDashTimer();
+checkFirstLaunch();
 
 // ── МОБИЛЬНОЕ МЕНЮ ────────────────────────────
 function toggleSidebar(){
