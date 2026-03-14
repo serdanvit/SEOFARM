@@ -213,7 +213,9 @@ def init_schema():
             name TEXT,
             description TEXT,
             status TEXT DEFAULT 'pending',
+            posts_count INTEGER DEFAULT 0,
             reposts_done INTEGER DEFAULT 0,
+            discussions_count INTEGER DEFAULT 0,
             post_id TEXT,
             nucleus_url TEXT,
             error_message TEXT,
@@ -321,5 +323,35 @@ def init_schema():
     else:
         conn.commit()
 
+    _run_schema_fixes(conn)
+
     logger.info(f"[DB] Схема инициализирована ({'PostgreSQL' if _IS_PG else 'SQLite'})")
     print(f"✅ БД готова ({'PostgreSQL' if _IS_PG else 'SQLite WAL'})")
+
+
+def _run_schema_fixes(conn):
+    """Лёгкие миграции для старых баз (без отдельного migration-фреймворка)."""
+    # Эти поля используются в runtime, но могли отсутствовать в БД, созданной старой версией.
+    _ensure_column(conn, "vk_groups", "posts_count", "INTEGER DEFAULT 0")
+    _ensure_column(conn, "vk_groups", "discussions_count", "INTEGER DEFAULT 0")
+    conn.commit()
+
+
+def _ensure_column(conn, table: str, column: str, col_type: str):
+    c = conn.cursor()
+
+    if _IS_PG:
+        c.execute(
+            """SELECT 1
+               FROM information_schema.columns
+               WHERE table_name=%s AND column_name=%s""",
+            (table, column),
+        )
+        exists = c.fetchone() is not None
+    else:
+        c.execute(f"PRAGMA table_info({table})")
+        exists = any(row[1] == column for row in c.fetchall())
+
+    if not exists:
+        c.execute(f"ALTER TABLE {table} ADD COLUMN {column} {col_type}")
+        logger.info(f"[DB] Миграция: добавлен столбец {table}.{column}")
