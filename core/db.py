@@ -298,7 +298,7 @@ def init_schema():
     indexes = [
         "CREATE INDEX IF NOT EXISTS idx_logs_agent ON logs(agent)",
         "CREATE INDEX IF NOT EXISTS idx_logs_created ON logs(created_at)",
-        "CREATE INDEX IF NOT EXISTS idx_leads_status ON monitor_leads(status)",
+                "CREATE INDEX IF NOT EXISTS idx_leads_status ON monitor_leads(status)",
         "CREATE INDEX IF NOT EXISTS idx_leads_found ON monitor_leads(found_at)",
         "CREATE INDEX IF NOT EXISTS idx_groups_status ON vk_groups(status)",
         "CREATE INDEX IF NOT EXISTS idx_tasks_status ON tasks(status)",
