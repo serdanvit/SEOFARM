@@ -9,7 +9,7 @@ from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from core.config import FLASK_HOST, FLASK_PORT, LOG_FILE, LOGS_DIR, DATA_DIR, UPLOADS_DIR
+from core.config import FLASK_HOST, FLASK_PORT, LOG_FILE, LOGS_DIR, DATA_DIR, UPLOADS_DIR, DB_URL
 from core.db import init_schema, fetchone, fetchall, execute
 from core.database import db_log, get_setting, set_setting, get_all_settings, get_platform_stats, get_logs
 
@@ -36,6 +36,13 @@ CORS(app)
 
 # ── Старт ─────────────────────────────────────────────────────
 init_schema()
+
+if DB_URL.startswith("postgres"):
+    try:
+        import psycopg2  # noqa: F401
+    except Exception:
+        logger.error("Выбран PostgreSQL, но psycopg2 не установлен. Установи requirements-postgres.txt")
+
 from core import scheduler
 scheduler.start()
 logger.info("SEO FARM запущен")
@@ -612,6 +619,7 @@ def api_campaign_start():
     data     = request.json or {}
     site_url = data.get("site_url", "").strip() or get_setting("site_url", "")
     count    = int(data.get("count", 30))
+    use_wordstat = str(data.get("use_wordstat", get_setting("use_wordstat", "false"))).lower() in ("1", "true", "yes", "on")
     if not site_url:
         return jsonify({"success": False, "error": "Укажи сайт в настройках"})
     if _campaign_status.get("running"):
@@ -639,8 +647,9 @@ def api_campaign_start():
 
             from core.ai_content import analyze_niche, generate_keywords, check_ollama_status
             from core.keyword_base import detect_niche, expand_keywords
-
+            from core.wordstat import get_keywords_with_frequency, get_region_id
             site_data = {}
+            
             if site.get("text"):
                 if check_ollama_status()["running"]:
                     log("AI определяет нишу...", "analyze", 35)
@@ -660,6 +669,28 @@ def api_campaign_start():
             else:
                 log(f"Генерация {count} ключей из базы...", "keywords", 55)
                 keywords = expand_keywords(niche or brand, region, services, count)
+
+            if use_wordstat:
+                ws_token = get_setting("yandex_wordstat_token", "")
+                ws_user = get_setting("yandex_wordstat_username", "")
+                if ws_token and ws_user:
+                    log("Уточняю ключи через Wordstat...", "keywords", 62)
+                    ws_keywords = get_keywords_with_frequency(
+                        phrases=keywords[:50],
+                        token=ws_token,
+                        username=ws_user,
+                        region_id=get_region_id(region),
+                        min_shows=50,
+                        max_shows=500,
+                    )
+                    if ws_keywords:
+                        seen = set()
+                        keywords = [k for k in ws_keywords if not (k in seen or seen.add(k))][:count]
+                        log(f"Wordstat подтвердил {len(keywords)} ключей", "keywords", 66)
+                    else:
+                        log("Wordstat не дал данных — оставляю AI/шаблонные ключи", "keywords", 66)
+                else:
+                    log("Wordstat включен, но нет токена/логина — шаг пропущен", "keywords", 66)
 
             log(f"Готово {len(keywords)} ключей", "schedule", 70)
 
@@ -758,3 +789,9 @@ def api_positions():
         "groups_planned":  pending[0]["n"] if pending else 0,
         "groups":          [dict(g) for g in groups[:20]],
     })
+
+
+@app.route("/api/meta/routes")
+def api_meta_routes():
+    routes = sorted({str(rule.rule) for rule in app.url_map.iter_rules()})
+    return jsonify({"count": len(routes), "routes": routes})
