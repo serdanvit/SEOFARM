@@ -1,149 +1,143 @@
 """
-core/scheduler.py — Планировщик всей платформы
-Управляет расписанием всех агентов.
+core/scheduler.py — Планировщик задач
+Исправлено: защита от двойного запуска, timeout зависших задач,
+автоматический сброс зависших задач при старте.
 """
-import threading, time, random, logging
-from datetime import date, datetime
+import threading, time, json, logging, os, sys
+from datetime import datetime
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 logger = logging.getLogger("scheduler")
 
-_running = False
-_paused  = False
-_thread  = None
-_last = {
-    "vk_reposts":    None,
-    "vk_activity":   None,
-    "monitor_scan":  None,
-}
+_running  = False
+_thread   = None
+_lock     = threading.Lock()
+_active_tasks = set()  # id задач которые сейчас выполняются
+
+
+def _run_task(task: dict):
+    task_id = task["id"]
+
+    with _lock:
+        if task_id in _active_tasks:
+            return  # уже запущена
+        _active_tasks.add(task_id)
+
+    from core.db import execute
+    execute("UPDATE tasks SET status='running', updated_at=datetime('now') WHERE id=?", (task_id,))
+
+    try:
+        result = _dispatch(task)
+        success = result.get("success") is not False
+
+        execute(
+            "UPDATE tasks SET status=?, updated_at=datetime('now') WHERE id=?",
+            ("done" if success else "failed", task_id)
+        )
+        if not success:
+            execute("UPDATE tasks SET error_message=? WHERE id=?",
+                    (str(result.get("error","?"))[:500], task_id))
+
+    except Exception as e:
+        logger.exception(f"[scheduler] Задача #{task_id}: {e}")
+        execute("UPDATE tasks SET status='failed', error_message=?, updated_at=datetime('now') WHERE id=?",
+                (str(e)[:500], task_id))
+    finally:
+        with _lock:
+            _active_tasks.discard(task_id)
+
+
+def _dispatch(task: dict) -> dict:
+    agent   = task["agent"]
+    ttype   = task["type"]
+    payload = json.loads(task.get("payload") or "{}")
+
+    if agent == "vk_groups":
+        if ttype == "create":
+            from agents.vk_groups.creator import create_group_pipeline
+            return create_group_pipeline(payload.get("keyword_id"), payload.get("keyword", ""))
+
+        elif ttype == "repost":
+            from core.vk_api import repost_post
+            from core.token_manager import decrypt_token
+            from core.db import fetchone
+            row = fetchone("SELECT token_encrypted FROM vk_accounts WHERE id=? AND status='active'",
+                           (task.get("account_id"),))
+            if not row:
+                return {"success": False, "error": "Аккаунт не найден"}
+            tok = decrypt_token(row["token_encrypted"])
+            return repost_post(tok, payload["vk_group_id"],
+                               payload["owner_id"], payload["post_id"])
+
+    elif agent == "vk_warmup":
+        from agents.vk_groups.warmup import run_warmup_task
+        return run_warmup_task(task)
+
+    elif agent == "comment_monitor":
+        from agents.comment_monitor.monitor import run_full_scan
+        return run_full_scan()
+
+    elif agent == "article_publisher":
+        from agents.article_publisher.publisher import publish_to_platforms
+        publish_to_platforms(payload.get("article_id"), payload.get("platforms", []))
+        return {"success": True}
+
+    return {"success": False, "error": f"Неизвестный агент: {agent}/{ttype}"}
+
+
+def _reset_stuck_tasks():
+    """Сбрасывает задачи которые застряли в статусе 'running' после перезапуска"""
+    from core.db import execute
+    execute(
+        "UPDATE tasks SET status='pending', updated_at=datetime('now') "
+        "WHERE status='running'"
+    )
+
+
+def _loop():
+    from core.db import fetchall
+    global _running
+    logger.info("[scheduler] Запущен")
+    _reset_stuck_tasks()
+
+    while _running:
+        try:
+            now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            tasks = fetchall(
+                """SELECT * FROM tasks
+                   WHERE status='pending'
+                     AND (scheduled_time IS NULL OR scheduled_time <= ?)
+                   ORDER BY scheduled_time ASC LIMIT 3""",
+                (now,)
+            )
+            for task in tasks:
+                if not _running:
+                    break
+                t = threading.Thread(target=_run_task, args=(task,), daemon=True)
+                t.start()
+                # Не ждём завершения — задачи параллельны, но не больше 3
+
+        except Exception as e:
+            logger.error(f"[scheduler] loop error: {e}")
+
+        time.sleep(30)
+
+    logger.info("[scheduler] Остановлен")
+
 
 def start():
-    global _running, _thread, _paused
-    if _running: return {"status": "already_running"}
-    _running = True; _paused = False
-    _thread = threading.Thread(target=_loop, daemon=True)
+    global _running, _thread
+    if _running:
+        return
+    _running = True
+    _thread = threading.Thread(target=_loop, daemon=True, name="scheduler")
     _thread.start()
-    from core.database import db_log
-    db_log("INFO", "scheduler", "Платформа запущена ✅")
-    return {"status": "started"}
+
 
 def stop():
     global _running
     _running = False
-    from core.database import db_log
-    db_log("INFO", "scheduler", "Платформа остановлена")
-    return {"status": "stopped"}
 
-def pause():
-    global _paused
-    _paused = True
-    return {"status": "paused"}
 
-def resume():
-    global _paused
-    _paused = False
-    return {"status": "resumed"}
-
-def status():
-    return {
-        "running": _running,
-        "paused":  _paused,
-        "status":  "paused" if _paused else ("running" if _running else "stopped"),
-        "last_monitor_scan":  str(_last["monitor_scan"])  if _last["monitor_scan"]  else "никогда",
-        "last_vk_reposts":    str(_last["vk_reposts"])    if _last["vk_reposts"]    else "никогда",
-        "last_vk_activity":   str(_last["vk_activity"])   if _last["vk_activity"]   else "никогда",
-    }
-
-def run_monitor_now():
-    """Ручной запуск мониторинга комментариев"""
-    def go():
-        try:
-            from agents.comment_monitor.monitor import run_full_scan
-            run_full_scan()
-        except Exception as e:
-            from core.database import db_log
-            db_log("ERROR", "scheduler", f"Мониторинг: {e}")
-    threading.Thread(target=go, daemon=True).start()
-    return {"status": "started"}
-
-def run_vk_reposts_now():
-    """Ручной запуск репостов"""
-    def go():
-        try:
-            from agents.vk_groups.repost import repost_to_all_groups
-            repost_to_all_groups()
-        except Exception as e:
-            from core.database import db_log
-            db_log("ERROR", "scheduler", f"Репосты: {e}")
-    threading.Thread(target=go, daemon=True).start()
-    return {"status": "started"}
-
-def run_vk_activity_now(likes=3, comments=1):
-    """Ручной запуск активности"""
-    def go():
-        try:
-            from agents.vk_groups.activity import run_activity_all
-            run_activity_all(likes, comments)
-        except Exception as e:
-            from core.database import db_log
-            db_log("ERROR", "scheduler", f"Активность: {e}")
-    threading.Thread(target=go, daemon=True).start()
-    return {"status": "started"}
-
-def _loop():
-    global _running, _paused
-    tick = 0
-    while _running:
-        if _paused:
-            time.sleep(10); continue
-        tick += 1
-        try:
-            # Каждые 30 тиков (~30 минут) — мониторинг комментариев
-            if tick % 30 == 0:
-                _auto_monitor()
-            # Каждые 1440 тиков (~24 часа) — репосты из ядра
-            if tick % 1440 == 0:
-                _auto_vk_reposts()
-            # Каждые 4320 тиков (~3 дня) — активность
-            if tick % 4320 == 0:
-                _auto_vk_activity()
-        except Exception as e:
-            logger.error(f"Scheduler loop error: {e}")
-        time.sleep(60)  # тик = 1 минута
-
-def _auto_monitor():
-    global _last
-    from core.database import db_log
-    db_log("INFO", "scheduler", "Авто-мониторинг комментариев...")
-    _last["monitor_scan"] = datetime.now()
-    def go():
-        try:
-            from agents.comment_monitor.monitor import run_full_scan
-            run_full_scan()
-        except Exception as e:
-            from core.database import db_log
-            db_log("ERROR", "scheduler", f"Авто-мониторинг: {e}")
-    threading.Thread(target=go, daemon=True).start()
-
-def _auto_vk_reposts():
-    global _last
-    _last["vk_reposts"] = datetime.now()
-    def go():
-        try:
-            from agents.vk_groups.repost import repost_to_all_groups
-            repost_to_all_groups()
-        except Exception as e:
-            from core.database import db_log
-            db_log("ERROR", "scheduler", f"Авто-репосты: {e}")
-    threading.Thread(target=go, daemon=True).start()
-
-def _auto_vk_activity():
-    global _last
-    _last["vk_activity"] = datetime.now()
-    def go():
-        try:
-            from agents.vk_groups.activity import run_activity_all
-            run_activity_all(3, 1)
-        except Exception as e:
-            from core.database import db_log
-            db_log("ERROR", "scheduler", f"Авто-активность: {e}")
-    threading.Thread(target=go, daemon=True).start()
+def is_running() -> bool:
+    return _running

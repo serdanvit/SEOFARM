@@ -1,51 +1,44 @@
 """
-core/config.py — Глобальная конфигурация всей платформы SEO FARM
+core/config.py — Конфигурация SEO FARM
+Для смены SQLite → PostgreSQL замени DB_URL на строку подключения.
 """
 import os
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DATA_DIR = os.path.join(BASE_DIR, "data")
-LOGS_DIR = os.path.join(BASE_DIR, "logs")
+DATA_DIR    = os.path.join(BASE_DIR, "data")
+LOGS_DIR    = os.path.join(BASE_DIR, "logs")
 UPLOADS_DIR = os.path.join(BASE_DIR, "uploads")
-DB_PATH = os.path.join(DATA_DIR, "seofarm.db")
+LOG_FILE    = os.path.join(LOGS_DIR, "seofarm.log")
 SECRET_KEY_FILE = os.path.join(DATA_DIR, ".secret_key")
-LOG_FILE = os.path.join(LOGS_DIR, "seofarm.log")
 
-# Flask
-FLASK_HOST = "0.0.0.0"
-FLASK_PORT = 5000
-FLASK_DEBUG = False
+# ── БАЗА ДАННЫХ ───────────────────────────────────────────────
+# SQLite (локально, без настройки):
+DB_URL = f"sqlite:///{os.path.join(DATA_DIR, 'seofarm.db')}"
 
-# VK API
-VK_API_URL = "https://api.vk.com/method/"
+# PostgreSQL (раскомментируй и подставь свои данные):
+# DB_URL = "postgresql://user:password@localhost:5432/seofarm"
+
+# ── FLASK ─────────────────────────────────────────────────────
+FLASK_HOST  = "0.0.0.0"
+FLASK_PORT  = 5000
+
+# ── VK API ────────────────────────────────────────────────────
+VK_API_URL     = "https://api.vk.com/method/"
 VK_API_VERSION = "5.131"
 
-# Лимиты VK групп (Агент 1)
-MAX_GROUPS_PER_DAY = 2
-MAX_ACTIONS_PER_DAY = 15
-DELAY_BETWEEN_ACTIONS = 30
-DELAY_JITTER = 20
-REPOST_DAYS = 3
-REPOSTS_PER_DAY = 2
+# Лимиты в день на один аккаунт (не превышай — заблокируют)
+MAX_GROUPS_PER_DAY  = 2    # не более 2 групп в день с аккаунта
+MAX_ACTIONS_PER_DAY = 15   # лайки, посты, репосты
 
-# Мониторинг комментариев (Агент 2)
-MONITOR_INTERVAL_MINUTES = 30   # как часто сканировать
-MONITOR_MAX_RESULTS = 100       # максимум результатов за поиск
-MONITOR_COMMENT_AGE_HOURS = 48  # не старше N часов
+# Задержки между действиями (секунды) — имитация живого поведения
+DELAY_BETWEEN_ACTIONS = 35
+DELAY_JITTER          = 15  # ±15 сек случайный разброс
 
-# Telegram (для уведомлений менеджерам)
-TELEGRAM_BOT_TOKEN = ""         # заполняется в настройках
-TELEGRAM_CHAT_IDS = []          # список chat_id менеджеров
+# Репосты из ядра
+REPOST_DAYS      = 3   # планировать репосты на N дней
+REPOSTS_PER_DAY  = 2   # репостов в день
 
-# Статусы задач
-TASK_PENDING  = "pending"
-TASK_RUNNING  = "running"
-TASK_DONE     = "done"
-TASK_FAILED   = "failed"
-
-# Агенты
-AGENT_VK_GROUPS       = "vk_groups"
-AGENT_COMMENT_MONITOR = "comment_monitor"
-AGENT_ARTICLE_PUB     = "article_publisher"
-AGENT_YANDEX_MAPS     = "yandex_maps"
-AGENT_2GIS            = "gis"
+# ── МОНИТОРИНГ (Агент 2) ──────────────────────────────────────
+MONITOR_INTERVAL_MINUTES = 30
+MONITOR_MAX_RESULTS      = 100
+MONITOR_COMMENT_AGE_HOURS = 48
