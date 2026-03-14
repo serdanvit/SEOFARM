@@ -1,3 +1,59 @@
+# Что именно менять (коротко и по делу)
+
+Если вы не разработчик, **в коде `app.py` вручную менять ничего не нужно**.
+
+## 1) Что менять обязательно
+
+Меняйте через интерфейс **Настройки** (`/api/settings`) только эти ключи:
+
+- `site_url` — ваш сайт.
+- `brand_name` — название бренда.
+- `region` — регион/город.
+- `public_base_url` — адрес, по которому реально открывается система
+  (пример: `http://127.0.0.1:5000` или `https://my-domain.ru`).
+
+## 2) Что менять при необходимости
+
+- `vk_client_id` — только если используете **своё** VK-приложение.
+  Если не знаете — оставьте по умолчанию.
+- `use_wordstat` — `true` или `false`.
+  - `false` (по умолчанию): работает без Wordstat.
+  - `true`: включит уточнение ключей через Wordstat.
+- `yandex_wordstat_token` и `yandex_wordstat_username` — нужны только если включили `use_wordstat=true`.
+
+## 3) Что обычно НЕ менять
+
+- `app.py`
+- `core/db.py`
+- SQL-запросы
+
+Эти файлы уже содержат нужные фиксы (миграции, OAuth-redirect, проверки).
+
+## 4) Как понять, что всё применилось
+
+Откройте:
+
+- `/api/system/checks` — покажет, что ключевые фиксы активны;
+- `/api/meta/routes` — покажет реальные маршруты сервера.
+
+Если в `/api/system/checks` видите:
+- `vk_groups_has_posts_count: true`
+- `vk_groups_has_discussions_count: true`
+
+значит миграции на месте.
+
+## 5) Быстрый сценарий (5 шагов)
+
+1. Запустить сервер: `python app.py`
+2. В Настройках заполнить: `site_url`, `brand_name`, `region`, `public_base_url`
+3. Нажать «Войти через VK»
+4. Проверить `/api/system/checks`
+5. Запустить кампанию
+app.py
+app.py
++87
+-6
+
 """
 app.py — SEO FARM Flask сервер
 Все эндпоинты которые вызывает фронтенд.
@@ -10,7 +66,7 @@ from flask_cors import CORS
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from core.config import FLASK_HOST, FLASK_PORT, LOG_FILE, LOGS_DIR, DATA_DIR, UPLOADS_DIR, DB_URL
-from core.db import init_schema, fetchone, fetchall, execute
+from core.db import init_schema, fetchone, fetchall, execute, get_conn
 from core.database import db_log, get_setting, set_setting, get_all_settings, get_platform_stats, get_logs
 
 # ── Логи ──────────────────────────────────────────────────────
@@ -446,8 +502,6 @@ def api_articles_publish(aid):
 
     threading.Thread(target=run, daemon=True).start()
     return jsonify({"success": True, "platforms": platforms})
-
-
 # ─────────────────────────────────────────────────────────────
 # ЗАДАЧИ
 # ─────────────────────────────────────────────────────────────
@@ -499,13 +553,6 @@ def api_scheduler_status():
     return jsonify({"running": scheduler.is_running()})
 
 # Поддерживаем оба варианта: toggle и отдельные start/stop/pause/resume
-@app.route("/api/scheduler/toggle",  methods=["POST"])
-@app.route("/api/scheduler/start",   methods=["POST"])
-@app.route("/api/scheduler/resume",  methods=["POST"])
-def api_scheduler_start():
-    scheduler.start()
-    return jsonify({"running": True})
-
 @app.route("/api/scheduler/stop",    methods=["POST"])
 @app.route("/api/scheduler/pause",   methods=["POST"])
 def api_scheduler_stop():
@@ -528,10 +575,18 @@ if __name__ == "__main__":
 VK_CLIENT_ID = "2685278"
 VK_SCOPE     = "groups,wall,photos,video,offline"
 
+def _public_base_url() -> str:
+    """Пытаемся корректно определить внешний URL приложения."""
+    configured = get_setting("public_base_url", "").strip()
+    if configured:
+        return configured.rstrip("/")
+    return request.host_url.rstrip("/")
+
 @app.route("/vk/auth")
 def vk_auth():
-    redirect_uri = f"http://localhost:{FLASK_PORT}/vk/callback"
-    url = (f"https://oauth.vk.com/authorize?client_id={VK_CLIENT_ID}"
+    redirect_uri = f"{_public_base_url()}/vk/callback"
+    client_id = get_setting("vk_client_id", VK_CLIENT_ID).strip() or VK_CLIENT_ID
+    url = (f"https://oauth.vk.com/authorize?client_id={client_id}"
            f"&display=page&redirect_uri={redirect_uri}"
            f"&scope={VK_SCOPE}&response_type=token&v=5.131")
     from flask import redirect as _redirect
@@ -551,8 +606,14 @@ cursor:pointer;font-size:1rem;margin-top:12px}</style></head>
 <script>
 const p=new URLSearchParams(window.location.hash.substring(1));
 const token=p.get('access_token');
+const err=p.get('error')||p.get('error_description');
 const box=document.getElementById('box');
-if(token){
+if(err){
+  box.innerHTML='<div style="font-size:2rem">❌</div><h2>VK не выдал токен</h2>'+
+    '<p style="color:#666">'+err+'</p>'+
+    '<p style="font-size:.9rem;color:#666">Проверь public_base_url и vk_client_id в настройках.</p>'+
+    '<button onclick="window.close()">Закрыть</button>';
+} else if(token){
   fetch('/api/accounts/add',{method:'POST',
     headers:{'Content-Type':'application/json'},
     body:JSON.stringify({token,notes:'OAuth '+new Date().toLocaleDateString()})})
@@ -582,7 +643,7 @@ def yandex_auth():
         return "<h2 style='font-family:sans-serif;padding:40px'>Укажи Yandex Client ID в Настройках → Интеграции</h2>", 400
     from flask import redirect as _r
     return _r(f"https://oauth.yandex.ru/authorize?response_type=token&client_id={cid}"
-              f"&redirect_uri=http://localhost:{FLASK_PORT}/yandex/callback")
+              f"&redirect_uri={_public_base_url()}/yandex/callback")
 
 @app.route("/yandex/callback")
 def yandex_callback():
@@ -648,8 +709,8 @@ def api_campaign_start():
             from core.ai_content import analyze_niche, generate_keywords, check_ollama_status
             from core.keyword_base import detect_niche, expand_keywords
             from core.wordstat import get_keywords_with_frequency, get_region_id
+
             site_data = {}
-            
             if site.get("text"):
                 if check_ollama_status()["running"]:
                     log("AI определяет нишу...", "analyze", 35)
@@ -717,53 +778,7 @@ def api_campaign_start():
                 "result": {"keywords": len(keywords), "scheduled": scheduled,
                            "days": day+1, "niche": niche, "brand": brand, "region": region}
             })
-        except Exception as e:
-            _campaign_status.update({"running": False, "stage": "error", "error": str(e)})
-            db_log("ERROR", "campaign", str(e))
-
-    threading.Thread(target=run, daemon=True).start()
-    return jsonify({"success": True})
-
-@app.route("/api/campaign/status")
-def api_campaign_status():
-    return jsonify(_campaign_status)
-
-@app.route("/api/campaign/stop", methods=["POST"])
-def api_campaign_stop():
-    _campaign_status["running"] = False
-    return jsonify({"success": True})
-
-# ─────────────────────────────────────────────────────────────
-# AI статус
-# ─────────────────────────────────────────────────────────────
-@app.route("/api/ai/status")
-def api_ai_status():
-    from core.ai_content import check_ollama_status
-    return jsonify(check_ollama_status())
-
-@app.route("/api/ai/test", methods=["POST"])
-def api_ai_test():
-    from core.ai_content import generate_group_name
-    data = request.json or {}
-    res  = generate_group_name(data.get("keyword","тест"), "", data.get("region","Москва"))
-    return jsonify({"success": bool(res), "result": res})
-
-# ─────────────────────────────────────────────────────────────
-# САЙТ — быстрый анализ
-# ─────────────────────────────────────────────────────────────
-@app.route("/api/site/analyze", methods=["POST"])
-def api_site_analyze():
-    data = request.json or {}
-    url  = data.get("url","").strip()
-    if not url:
-        return jsonify({"success": False, "error": "URL не указан"})
-    from core.site_parser import parse_site
-    from core.ai_content import analyze_niche, check_ollama_status
-    from core.keyword_base import detect_niche
-    site = parse_site(url)
-    site_data = {}
-    if site.get("text"):
-        if check_ollama_status()["running"]:
+@@ -736,25 +782,60 @@ def api_site_analyze():
             site_data = analyze_niche(site["text"])
         else:
             site_data["niche"] = detect_niche(site["text"])
@@ -795,3 +810,32 @@ def api_positions():
 def api_meta_routes():
     routes = sorted({str(rule.rule) for rule in app.url_map.iter_rules()})
     return jsonify({"count": len(routes), "routes": routes})
+
+
+@app.route("/api/system/checks")
+def api_system_checks():
+    """Быстрая самопроверка: показывает, применены ли ключевые изменения."""
+    conn = get_conn()
+    c = conn.cursor()
+
+    if DB_URL.startswith("postgres"):
+        c.execute(
+            """SELECT column_name FROM information_schema.columns
+               WHERE table_name='vk_groups'"""
+        )
+        cols = {row[0] for row in c.fetchall()}
+    else:
+        c.execute("PRAGMA table_info(vk_groups)")
+        cols = {row[1] for row in c.fetchall()}
+
+    return jsonify({
+        "success": True,
+        "checks": {
+            "vk_groups_has_posts_count": "posts_count" in cols,
+            "vk_groups_has_discussions_count": "discussions_count" in cols,
+            "meta_routes_endpoint": True,
+            "oauth_public_base_url_set": bool(get_setting("public_base_url", "").strip()),
+            "wordstat_opt_in_setting": get_setting("use_wordstat", "false"),
+            "vk_client_id": get_setting("vk_client_id", VK_CLIENT_ID),
+        },
+    })
