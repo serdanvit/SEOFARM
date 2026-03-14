@@ -1,362 +1,238 @@
 """
-agents/comment_monitor/monitor.py — Агент 2: Мониторинг комментариев
-Ищет реальные комментарии людей в VK по ключевым запросам.
-Находит → анализирует → отправляет менеджеру в Telegram.
+agents/comment_monitor/monitor.py — Агент 2: Мониторинг комментариев VK
+Ищет людей которые задают вопросы по нашей теме → лид в базу → Telegram менеджеру.
+Исправлено: новый db API, retry, надёжная отправка Telegram.
 """
 import os, sys, time, random, re, json, logging
 from datetime import datetime, timedelta
-
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
-from core.database import get_conn, db_log, get_setting
-from core.vk_api import api_call, search_comments, get_post_comments, get_group_info
+from core.db import fetchall, fetchone, execute
+from core.database import db_log, get_setting
+from core.vk_api import api_call, search_comments, get_post_comments
 from core.token_manager import get_active_tokens
 from core.config import MONITOR_COMMENT_AGE_HOURS
 
 logger = logging.getLogger("comment_monitor")
 
-# ============================================================
-# ФИЛЬТРАЦИЯ — отличаем живых людей от ботов/групп
-# ============================================================
-
-# Слова которые выдают рекламный/спамный комментарий — пропускаем
+# Стоп-слова: реклама и спам — пропускаем
 SPAM_PATTERNS = [
     r"подпишись", r"переходи по ссылке", r"заработок", r"млм",
-    r"http[s]?://", r"t\.me/", r"@[a-zA-Z0-9_]{5,}",
-    r"скидка \d+%", r"акция", r"промокод",
+    r"https?://", r"t\.me/", r"@[a-zA-Z0-9_]{5,}",
+    r"скидка \d+%", r"промокод", r"партнёр",
 ]
 
-# Слова которые говорят что человек ИЩЕТ что-то — нужные нам
+# Слова намерения: человек что-то ИЩЕТ — наш потенциальный клиент
 INTENT_KEYWORDS = [
     "ищу", "ищем", "посоветуйте", "посоветуй", "порекомендуйте",
     "подскажите", "подскажи", "помогите", "кто знает", "где найти",
     "где можно", "кто сталкивался", "кто пользовался", "есть ли",
     "какие варианты", "стоит ли", "как выбрать", "что выбрать",
-    "помогите выбрать", "хочу найти", "нужна помощь", "нужен совет",
-    "нужно найти", "нужна рекомендация", "нужны варианты",
+    "хочу найти", "нужна помощь", "нужен совет", "нужно найти",
     "интересует", "рассматриваю", "думаем о", "планируем",
-    "сравните", "стоит идти", "хороший ли", "плохой ли",
     "отзывы", "реальные отзывы", "кто ходил", "кто учился",
+    "сравните", "хороший ли", "стоит идти", "рекомендуете",
 ]
 
-def _is_spam(text):
-    """Возвращает True если это реклама/спам"""
-    text_lower = text.lower()
-    for pattern in SPAM_PATTERNS:
-        if re.search(pattern, text_lower):
-            return True
-    return False
 
-def _has_intent(text, extra_keywords=None):
-    """
-    Возвращает True если человек явно что-то ищет/спрашивает.
-    extra_keywords — доп. слова из конкретного запроса.
-    """
-    text_lower = text.lower()
-    # Проверяем базовые слова намерения
-    for kw in INTENT_KEYWORDS:
-        if kw in text_lower:
-            return True
-    # Проверяем дополнительные ключи
-    if extra_keywords:
-        for kw in extra_keywords:
-            if kw.lower() in text_lower:
-                return True
-    # Вопросительные предложения тоже считаем
-    if "?" in text and len(text) > 30:
+def _is_spam(text: str) -> bool:
+    tl = text.lower()
+    return any(re.search(p, tl) for p in SPAM_PATTERNS)
+
+
+def _has_intent(text: str, extra_kw=None) -> bool:
+    tl = text.lower()
+    if any(kw in tl for kw in INTENT_KEYWORDS):
+        return True
+    if extra_kw and any(k.lower() in tl for k in extra_kw):
+        return True
+    if "?" in text and len(text) > 25:
         return True
     return False
 
-def _is_too_old(timestamp_unix):
-    """Возвращает True если комментарий слишком старый"""
-    if not timestamp_unix:
-        return False
-    dt = datetime.fromtimestamp(int(timestamp_unix))
-    age = datetime.now() - dt
-    return age.total_seconds() > MONITOR_COMMENT_AGE_HOURS * 3600
 
-def _already_saved(post_url, author_id):
-    """Проверяет что мы уже сохранили этот лид"""
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute(
+def _is_fresh(timestamp_unix) -> bool:
+    if not timestamp_unix:
+        return True
+    age = datetime.now() - datetime.fromtimestamp(int(timestamp_unix))
+    return age.total_seconds() < MONITOR_COMMENT_AGE_HOURS * 3600
+
+
+def _already_saved(post_url: str, author_id) -> bool:
+    row = fetchone(
         "SELECT id FROM monitor_leads WHERE post_url=? AND author_id=?",
         (post_url, str(author_id))
     )
-    exists = c.fetchone() is not None
-    conn.close()
-    return exists
+    return row is not None
 
-# ============================================================
-# СОХРАНЕНИЕ ЛИДА
-# ============================================================
 
-def _save_lead(query_id, query_text, source, author_id, author_name,
-               author_url, text, post_url, group_name=""):
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("""INSERT INTO monitor_leads
-        (query_id, query_text, source, author_id, author_name, author_url,
-         text, post_url, group_name, status, sent_to_telegram)
-        VALUES (?,?,?,?,?,?,?,?,?,'new',0)""",
-        (query_id, query_text, source, str(author_id), author_name,
-         author_url, text, post_url, group_name))
-    lead_id = c.lastrowid
-    c.execute("UPDATE monitor_queries SET found_total=found_total+1 WHERE id=?",
-              (query_id,))
-    conn.commit()
-    conn.close()
+def _save_lead(query_id, query_text, author_id, author_name,
+               author_url, text, post_url, group_name="") -> int:
+    lead_id = execute(
+        """INSERT INTO monitor_leads
+           (query_id, query_text, source, author_id, author_name,
+            author_url, text, post_url, group_name, status, sent_to_telegram)
+           VALUES (?,?,'vk',?,?,?,?,?,?,'new',0)""",
+        (query_id, query_text, str(author_id), author_name,
+         author_url, text[:2000], post_url, group_name)
+    )
+    execute("UPDATE monitor_queries SET found_total=found_total+1 WHERE id=?", (query_id,))
     return lead_id
 
-# ============================================================
-# TELEGRAM УВЕДОМЛЕНИЯ
-# ============================================================
 
-def send_telegram(text):
-    """Отправляет сообщение всем менеджерам в Telegram"""
-    bot_token = get_setting("telegram_bot_token", "")
-    chat_ids_raw = get_setting("telegram_chat_ids", "")
+# ── TELEGRAM ─────────────────────────────────────────────────
 
-    if not bot_token or not chat_ids_raw:
-        logger.warning("Telegram не настроен — пропускаем отправку")
+def send_telegram(text: str) -> bool:
+    bot_token  = get_setting("telegram_bot_token", "")
+    chat_ids_r = get_setting("telegram_chat_ids", "")
+    if not bot_token or not chat_ids_r:
         return False
 
-    chat_ids = [x.strip() for x in chat_ids_raw.split(",") if x.strip()]
+    import requests as req
+    chat_ids = [x.strip() for x in chat_ids_r.split(",") if x.strip()]
     url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
-    success = False
+    ok = False
 
-    for chat_id in chat_ids:
-        try:
-            import requests
-            r = requests.post(url, json={
-                "chat_id": chat_id,
-                "text": text,
-                "parse_mode": "HTML",
-                "disable_web_page_preview": False
-            }, timeout=10)
-            if r.ok:
-                success = True
-        except Exception as e:
-            logger.error(f"Ошибка Telegram [{chat_id}]: {e}")
+    for cid in chat_ids:
+        for attempt in range(3):
+            try:
+                r = req.post(url, json={
+                    "chat_id": cid, "text": text,
+                    "parse_mode": "HTML",
+                    "disable_web_page_preview": True
+                }, timeout=10)
+                data = r.json()
+                if data.get("ok"):
+                    ok = True
+                    break
+                elif data.get("error_code") == 429:
+                    time.sleep(data.get("parameters", {}).get("retry_after", 5))
+                else:
+                    logger.warning(f"[TG] {cid}: {data.get('description')}")
+                    break
+            except Exception as e:
+                logger.error(f"[TG] {cid} attempt {attempt}: {e}")
+                time.sleep(2)
+    return ok
 
-    return success
 
-def _format_lead_message(lead: dict, query_text: str) -> str:
-    """Форматирует красивое сообщение для менеджера"""
-    author = lead.get("author_name", "Неизвестный")
-    text   = lead.get("text", "")[:400]
-    url    = lead.get("post_url", "")
-    group  = lead.get("group_name", "")
-    ts     = lead.get("found_at", "")[:16]
-
-    msg = (
-        f"🎯 <b>НОВЫЙ ЛИД — горячий запрос!</b>\n\n"
+def _format_lead(lead: dict, query_text: str) -> str:
+    text = (lead.get("text") or "")[:400]
+    return (
+        f"🎯 <b>НОВЫЙ ЛИД</b>\n\n"
         f"🔍 <b>Запрос:</b> {query_text}\n"
-        f"👤 <b>Автор:</b> {author}\n"
-        f"📍 <b>Группа:</b> {group}\n"
-        f"🕐 <b>Время:</b> {ts}\n\n"
-        f"💬 <b>Что написал:</b>\n<i>{text}</i>\n\n"
-        f"🔗 <b>Ссылка:</b> {url}\n\n"
-        f"➡️ <b>Ответь быстро — человек ещё горячий!</b>"
+        f"👤 <b>Автор:</b> {lead.get('author_name','?')}\n"
+        f"📍 <b>Группа:</b> {lead.get('group_name','?')}\n\n"
+        f"💬 <b>Написал:</b>\n<i>{text}</i>\n\n"
+        f"🔗 {lead.get('post_url','')}\n\n"
+        f"⚡️ Ответь быстро — человек горячий!"
     )
-    return msg
 
-# ============================================================
-# ОСНОВНОЙ ПОИСК
-# ============================================================
+
+def _notify(lead_id: int, query_text: str):
+    lead = fetchone("SELECT * FROM monitor_leads WHERE id=?", (lead_id,))
+    if not lead:
+        return
+    msg = _format_lead(dict(lead), query_text)
+    ok  = send_telegram(msg)
+    execute("UPDATE monitor_leads SET sent_to_telegram=? WHERE id=?", (1 if ok else 0, lead_id))
+    if ok:
+        db_log("SUCCESS", "comment_monitor", f"Лид #{lead_id} → Telegram")
+
+
+# ── СКАНИРОВАНИЕ ─────────────────────────────────────────────
 
 def scan_query(query_id: int, query_text: str, token: str) -> int:
-    """
-    Сканирует VK по одному поисковому запросу.
-    Возвращает количество найденных новых лидов.
-    """
-    found = 0
+    found    = 0
     extra_kw = query_text.lower().split()
-
     db_log("INFO", "comment_monitor", f"Сканирую: «{query_text}»")
 
-    # === ПОИСК 1: newsfeed.search — посты и комментарии из всего VK ===
     result = search_comments(token, query_text, count=100)
-
     if "error" in result:
-        db_log("ERROR", "comment_monitor",
-               f"Ошибка поиска «{query_text}»: {result['error']}")
+        db_log("ERROR", "comment_monitor", f"Ошибка поиска «{query_text}»: {result['error']}")
         return 0
 
-    items   = result.get("response", {}).get("items", [])
-    profiles = {str(p["id"]): p
-                for p in result.get("response", {}).get("profiles", [])}
-    groups   = {str(g["id"]): g
-                for g in result.get("response", {}).get("groups", [])}
+    resp     = result.get("response", {})
+    items    = resp.get("items", [])
+    profiles = {str(p["id"]): p for p in resp.get("profiles", [])}
+    groups   = {str(g["id"]): g for g in resp.get("groups", [])}
 
     for item in items:
         owner_id = item.get("owner_id", item.get("from_id", 0))
         post_id  = item.get("id", 0)
-        text     = item.get("text", "").strip()
+        text     = (item.get("text") or "").strip()
         date_ts  = item.get("date", 0)
 
-        if not text or len(text) < 20:
-            continue
-        if _is_too_old(date_ts):
-            continue
-        if _is_spam(text):
+        if len(text) < 20 or not _is_fresh(date_ts) or _is_spam(text):
             continue
 
-        # Ищем комментарии к этому посту — там реальные люди
-        comments_result = get_post_comments(token, owner_id, post_id, count=50)
-        time.sleep(random.uniform(0.5, 1.5))  # пауза между запросами
-
-        comments = []
-        if "response" in comments_result:
-            comments = comments_result["response"].get("items", [])
-            # Профили из комментариев
-            for p in comments_result["response"].get("profiles", []):
-                profiles[str(p["id"])] = p
-
-        # Обрабатываем сам пост
-        post_author_id = item.get("from_id", owner_id)
-        post_url = _build_post_url(owner_id, post_id)
+        post_url   = f"https://vk.com/wall{owner_id}_{post_id}"
         group_name = ""
         if owner_id < 0:
             g = groups.get(str(abs(owner_id)), {})
             group_name = g.get("name", "")
 
-        # Если сам пост содержит запрос с интентом
-        if _has_intent(text, extra_kw) and not _already_saved(post_url, post_author_id):
-            profile = profiles.get(str(post_author_id), {})
-            author_name = _get_name(profile, post_author_id)
-            author_url  = f"https://vk.com/id{post_author_id}" if post_author_id > 0 else ""
-
-            lead_id = _save_lead(
-                query_id, query_text, "vk",
-                post_author_id, author_name, author_url,
-                text, post_url, group_name
-            )
-            _notify_manager(lead_id, query_text)
+        # Сам пост — если содержит интент
+        from_id = item.get("from_id", owner_id)
+        if _has_intent(text, extra_kw) and not _already_saved(post_url, from_id):
+            prof = profiles.get(str(from_id), {})
+            name = f"{prof.get('first_name','')} {prof.get('last_name','')}".strip() or f"ID{from_id}"
+            url  = f"https://vk.com/id{from_id}" if from_id > 0 else ""
+            lid  = _save_lead(query_id, query_text, from_id, name, url, text, post_url, group_name)
+            _notify(lid, query_text)
             found += 1
 
-        # Обрабатываем комментарии под постом
-        for comment in comments:
-            c_author_id = comment.get("from_id", 0)
-            c_text      = comment.get("text", "").strip()
-            c_date      = comment.get("date", 0)
-            c_id        = comment.get("id", 0)
+        # Комментарии к посту
+        time.sleep(random.uniform(0.8, 2.0))
+        c_result = get_post_comments(token, owner_id, post_id, count=50)
+        if "response" in c_result:
+            for cp in c_result["response"].get("profiles", []):
+                profiles[str(cp["id"])] = cp
+            for comment in c_result["response"].get("items", []):
+                c_id   = comment.get("id", 0)
+                c_from = comment.get("from_id", 0)
+                c_text = (comment.get("text") or "").strip()
+                c_date = comment.get("date", 0)
+                c_url  = f"{post_url}?reply={c_id}"
 
-            if not c_text or len(c_text) < 15:
-                continue
-            if _is_too_old(c_date):
-                continue
-            if _is_spam(c_text):
-                continue
-            if not _has_intent(c_text, extra_kw):
-                continue
+                if (len(c_text) < 15 or not _is_fresh(c_date)
+                        or _is_spam(c_text) or not _has_intent(c_text, extra_kw)
+                        or _already_saved(c_url, c_from)):
+                    continue
 
-            comment_url = f"{post_url}?reply={c_id}"
-            if _already_saved(comment_url, c_author_id):
-                continue
-
-            profile     = profiles.get(str(c_author_id), {})
-            author_name = _get_name(profile, c_author_id)
-            author_url  = f"https://vk.com/id{c_author_id}" if c_author_id > 0 else ""
-
-            lead_id = _save_lead(
-                query_id, query_text, "vk",
-                c_author_id, author_name, author_url,
-                c_text, comment_url, group_name
-            )
-            _notify_manager(lead_id, query_text)
-            found += 1
+                prof = profiles.get(str(c_from), {})
+                name = f"{prof.get('first_name','')} {prof.get('last_name','')}".strip() or f"ID{c_from}"
+                url  = f"https://vk.com/id{c_from}" if c_from > 0 else ""
+                lid  = _save_lead(query_id, query_text, c_from, name, url, c_text, c_url, group_name)
+                _notify(lid, query_text)
+                found += 1
 
     db_log("INFO" if found == 0 else "SUCCESS", "comment_monitor",
-           f"Запрос «{query_text}»: найдено {found} новых лидов")
+           f"«{query_text}»: {found} новых лидов")
     return found
 
 
-def _build_post_url(owner_id, post_id):
-    if owner_id < 0:
-        return f"https://vk.com/wall{owner_id}_{post_id}"
-    return f"https://vk.com/wall{owner_id}_{post_id}"
-
-
-def _get_name(profile, uid):
-    if profile:
-        return f"{profile.get('first_name','')} {profile.get('last_name','')}".strip()
-    return f"ID{uid}"
-
-
-def _notify_manager(lead_id, query_text):
-    """Отправляет уведомление в Telegram и помечает лид как отправленный"""
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("SELECT * FROM monitor_leads WHERE id=?", (lead_id,))
-    row = c.fetchone()
-    conn.close()
-
-    if not row:
-        return
-
-    lead = dict(row)
-    msg  = _format_lead_message(lead, query_text)
-    ok   = send_telegram(msg)
-
-    conn = get_conn()
-    conn.execute(
-        "UPDATE monitor_leads SET sent_to_telegram=? WHERE id=?",
-        (1 if ok else 0, lead_id)
-    )
-    conn.commit()
-    conn.close()
-
-    if ok:
-        db_log("SUCCESS", "comment_monitor",
-               f"Лид #{lead_id} отправлен в Telegram: {lead.get('author_name')}")
-
-
-# ============================================================
-# ЗАПУСК ПОЛНОГО СКАНИРОВАНИЯ
-# ============================================================
-
 def run_full_scan() -> dict:
-    """
-    Сканирует все активные поисковые запросы.
-    Вызывается планировщиком или вручную из панели.
-    """
     tokens = get_active_tokens()
     if not tokens:
-        db_log("WARNING", "comment_monitor", "Нет активных аккаунтов для сканирования")
+        db_log("WARNING", "comment_monitor", "Нет аккаунтов")
         return {"error": "Нет аккаунтов", "leads": 0}
 
-    # Берём случайный токен
     account_id, token = random.choice(tokens)
-
-    conn = get_conn()
-    c = conn.cursor()
-    c.execute("SELECT * FROM monitor_queries WHERE status='active' ORDER BY id")
-    queries = [dict(r) for r in c.fetchall()]
-    conn.close()
+    queries = fetchall("SELECT * FROM monitor_queries WHERE status='active' ORDER BY id")
 
     if not queries:
         db_log("INFO", "comment_monitor", "Нет активных поисковых запросов")
         return {"leads": 0, "queries": 0}
 
-    total_leads = 0
+    total = 0
     for q in queries:
         leads = scan_query(q["id"], q["query"], token)
-        total_leads += leads
-
-        # Обновляем время последнего запуска
-        conn = get_conn()
-        conn.execute(
-            "UPDATE monitor_queries SET last_run=datetime('now') WHERE id=?",
-            (q["id"],)
-        )
-        conn.commit()
-        conn.close()
-
-        # Пауза между запросами — не спамим VK
-        delay = random.randint(15, 40)
-        db_log("INFO", "comment_monitor", f"Пауза {delay}s...")
+        total += leads
+        execute("UPDATE monitor_queries SET last_run=datetime('now') WHERE id=?", (q["id"],))
+        delay = random.randint(20, 45)
+        db_log("INFO", "comment_monitor", f"Пауза {delay}с...")
         time.sleep(delay)
 
     db_log("SUCCESS", "comment_monitor",
-           f"Полное сканирование завершено: {total_leads} лидов по {len(queries)} запросам")
-    return {"leads": total_leads, "queries": len(queries)}
+           f"Сканирование завершено: {total} лидов по {len(queries)} запросам")
+    return {"leads": total, "queries": len(queries)}
