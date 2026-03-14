@@ -1,52 +1,8 @@
-2026-03-10 01:49:20,043 [INFO] werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+2026-03-14 03:43:59,715 [INFO] db: [DB] Схема инициализирована (SQLite)
+2026-03-14 03:43:59,723 [INFO] scheduler: [scheduler] Запущен
+2026-03-14 03:43:59,723 [INFO] app: SEO FARM запущен
+2026-03-14 03:43:59,788 [INFO] werkzeug: [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
  * Running on all addresses (0.0.0.0)
  * Running on http://127.0.0.1:5000
  * Running on http://172.18.0.1:5000
-2026-03-10 01:49:20,044 [INFO] werkzeug: [33mPress CTRL+C to quit[0m
-2026-03-10 01:49:40,757 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:49:40] "GET / HTTP/1.1" 200 -
-2026-03-10 01:49:41,067 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:49:41] "GET /api/stats HTTP/1.1" 200 -
-2026-03-10 01:49:41,217 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:49:41] "GET /api/monitor/leads?status=new&limit=5 HTTP/1.1" 200 -
-2026-03-10 01:49:41,841 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:49:41] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
-2026-03-10 01:49:41,853 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:49:41] "[33mGET /favicon.ico HTTP/1.1[0m" 404 -
-2026-03-10 01:50:04,742 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:50:04] "GET /api/accounts HTTP/1.1" 200 -
-2026-03-10 01:50:08,634 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:50:08] "GET /api/settings HTTP/1.1" 200 -
-2026-03-10 01:50:10,469 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:50:10] "GET /api/accounts HTTP/1.1" 200 -
-2026-03-10 01:50:31,199 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:50:31] "GET /api/settings HTTP/1.1" 200 -
-2026-03-10 01:50:41,846 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:50:41] "GET /api/vk/keywords HTTP/1.1" 200 -
-2026-03-10 01:50:43,517 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:50:43] "GET /api/accounts HTTP/1.1" 200 -
-2026-03-10 01:50:45,855 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:50:45] "GET /api/settings HTTP/1.1" 200 -
-2026-03-10 01:50:54,447 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:50:54] "GET /api/logs?limit=150 HTTP/1.1" 200 -
-2026-03-10 01:51:19,530 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:51:19] "GET /api/monitor/queries HTTP/1.1" 200 -
-2026-03-10 01:52:22,038 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:52:22] "GET /api/stats HTTP/1.1" 200 -
-2026-03-10 01:52:22,082 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:52:22] "GET /api/monitor/leads?status=new&limit=5 HTTP/1.1" 200 -
-2026-03-10 01:52:41,081 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:52:41] "GET /api/stats HTTP/1.1" 200 -
-2026-03-10 01:52:41,120 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:52:41] "GET /api/monitor/leads?status=new&limit=5 HTTP/1.1" 200 -
-2026-03-10 01:53:11,069 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:53:11] "GET /api/stats HTTP/1.1" 200 -
-2026-03-10 01:53:11,096 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:53:11] "GET /api/monitor/leads?status=new&limit=5 HTTP/1.1" 200 -
-2026-03-10 01:53:45,876 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:53:45] "GET /api/stats HTTP/1.1" 200 -
-2026-03-10 01:53:45,903 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:53:45] "GET /api/monitor/leads?status=new&limit=5 HTTP/1.1" 200 -
-2026-03-10 01:53:48,054 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:53:48] "GET / HTTP/1.1" 200 -
-2026-03-10 01:53:48,142 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:53:48] "GET /api/stats HTTP/1.1" 200 -
-2026-03-10 01:53:48,305 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:53:48] "GET /api/monitor/leads?status=new&limit=5 HTTP/1.1" 200 -
-2026-03-10 01:54:04,229 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:54:04] "GET /api/articles HTTP/1.1" 200 -
-2026-03-10 01:54:24,505 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:54:24] "GET /api/accounts HTTP/1.1" 200 -
-2026-03-10 01:54:26,782 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:54:26] "GET /api/stats HTTP/1.1" 200 -
-2026-03-10 01:54:26,821 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:54:26] "GET /api/monitor/leads?status=new&limit=5 HTTP/1.1" 200 -
-2026-03-10 01:54:49,071 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:54:49] "GET /api/stats HTTP/1.1" 200 -
-2026-03-10 01:54:49,087 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:54:49] "GET /api/monitor/leads?status=new&limit=5 HTTP/1.1" 200 -
-2026-03-10 01:55:19,085 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:55:19] "GET /api/stats HTTP/1.1" 200 -
-2026-03-10 01:55:19,119 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:55:19] "GET /api/monitor/leads?status=new&limit=5 HTTP/1.1" 200 -
-2026-03-10 01:55:49,072 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:55:49] "GET /api/stats HTTP/1.1" 200 -
-2026-03-10 01:55:49,086 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:55:49] "GET /api/monitor/leads?status=new&limit=5 HTTP/1.1" 200 -
-2026-03-10 01:56:19,085 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:56:19] "GET /api/stats HTTP/1.1" 200 -
-2026-03-10 01:56:19,112 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:56:19] "GET /api/monitor/leads?status=new&limit=5 HTTP/1.1" 200 -
-2026-03-10 01:56:49,075 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:56:49] "GET /api/stats HTTP/1.1" 200 -
-2026-03-10 01:56:49,090 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:56:49] "GET /api/monitor/leads?status=new&limit=5 HTTP/1.1" 200 -
-2026-03-10 01:57:46,082 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:57:46] "GET /api/stats HTTP/1.1" 200 -
-2026-03-10 01:57:46,098 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:57:46] "GET /api/monitor/leads?status=new&limit=5 HTTP/1.1" 200 -
-2026-03-10 01:58:14,070 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:58:14] "GET /api/stats HTTP/1.1" 200 -
-2026-03-10 01:58:14,123 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:58:14] "GET /api/monitor/leads?status=new&limit=5 HTTP/1.1" 200 -
-2026-03-10 01:58:18,148 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:58:18] "GET /api/stats HTTP/1.1" 200 -
-2026-03-10 01:58:18,165 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:58:18] "GET /api/monitor/leads?status=new&limit=5 HTTP/1.1" 200 -
-2026-03-10 01:58:49,073 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:58:49] "GET /api/stats HTTP/1.1" 200 -
-2026-03-10 01:58:49,089 [INFO] werkzeug: 127.0.0.1 - - [10/Mar/2026 01:58:49] "GET /api/monitor/leads?status=new&limit=5 HTTP/1.1" 200 -
+2026-03-14 03:43:59,788 [INFO] werkzeug: [33mPress CTRL+C to quit[0m
