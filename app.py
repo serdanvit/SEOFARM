@@ -564,7 +564,7 @@ def api_scheduler_stop():
 # СТАРТ
 # ─────────────────────────────────────────────────────────────
 if __name__ == "__main__":
-    url = f"http://localhost:{FLASK_PORT}"
+    url = f"http://localhost:5000"
     threading.Timer(1.5, lambda: webbrowser.open(url)).start()
     print(f"\n  SEO FARM: {url}\n")
     app.run(host=FLASK_HOST, port=FLASK_PORT, debug=False, threaded=True)

@@ -1,0 +1,75 @@
+# Что именно менять (коротко и по делу)
+
+Если вы не разработчик, **в коде `app.py` вручную менять ничего не нужно**.
+
+## 1) Что менять обязательно
+
+Меняйте через интерфейс **Настройки** (`/api/settings`) только эти ключи:
+
+- `site_url` — ваш сайт.
+- `brand_name` — название бренда.
+- `region` — регион/город.
+- `public_base_url` — адрес, по которому реально открывается система
+  (пример: `http://127.0.0.1:5000` или `https://my-domain.ru`).
+
+## 2) Что менять при необходимости
+
+- `vk_client_id` — только если используете **своё** VK-приложение.
+  Если не знаете — оставьте по умолчанию.
+- `use_wordstat` — `true` или `false`.
+  - `false` (по умолчанию): работает без Wordstat.
+  - `true`: включит уточнение ключей через Wordstat.
+- `yandex_wordstat_token` и `yandex_wordstat_username` — нужны только если включили `use_wordstat=true`.
+
+## 3) Что обычно НЕ менять
+
+- `app.py`
+- `core/db.py`
+- SQL-запросы
+
+Эти файлы уже содержат нужные фиксы (миграции, OAuth-redirect, проверки).
+
+## 4) Как понять, что всё применилось
+
+Откройте:
+
+- `/api/system/checks` — покажет, что ключевые фиксы активны;
+- `/api/meta/routes` — покажет реальные маршруты сервера.
+
+Если в `/api/system/checks` видите:
+- `vk_groups_has_posts_count: true`
+- `vk_groups_has_discussions_count: true`
+
+значит миграции на месте.
+
+## 5) Быстрый сценарий (5 шагов)
+
+1. Запустить сервер: `python app.py`
+2. В Настройках заполнить: `site_url`, `brand_name`, `region`, `public_base_url`
+3. Нажать «Войти через VK»
+4. Проверить `/api/system/checks`
+5. Запустить кампанию
+
+## 6) Важно для PowerShell (ваша ошибка)
+
+У вас ошибка из-за лишнего символа `` ` `` в конце команды.
+
+Неправильно (как в логе):
+- `pip install -r requirements.txt``
+- `pip install -r requirements-postgres.txt``
+
+Правильно (без обратной кавычки в конце):
+
+```powershell
+cd C:\Users\ACERza\Desktop\SEOFARM-main
+python -m pip install -r requirements.txt
+python app.py
+```
+
+Если нужен PostgreSQL:
+
+```powershell
+cd C:\Users\ACERza\Desktop\SEOFARM-main
+python -m pip install -r requirements-postgres.txt
+python app.py
+```
